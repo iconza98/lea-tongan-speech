@@ -1,0 +1,16 @@
+# Sample Tongan words for the G2P-coverage metric (ʻokina + macron cases).
+# Replace/extend with real corpus transcripts once the dataset has clips.
+ʻufi
+ʻako
+ʻofa
+taʻu
+lavameʻa
+kumā
+mālō
+mālohi
+Tōnga
+fēfē
+kikī
+māfana
+fale
+fonua
