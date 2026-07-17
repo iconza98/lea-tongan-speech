@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/iconza98/lea-tongan-speech/blob/main/data/clip.schema.json",
+  "title": "Clip",
+  "description": "One speaker reading one prompt — the training unit of the Lea Tongan Speech corpus.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "clipId", "promptId", "speakerId", "transcript", "english",
+    "audio", "status", "consent", "createdAt", "updatedAt"
+  ],
+  "properties": {
+    "clipId": { "type": "string", "minLength": 1 },
+    "promptId": { "type": "string", "minLength": 1 },
+    "speakerId": { "type": "string", "minLength": 1 },
+    "transcript": {
+      "type": "string", "minLength": 1,
+      "description": "Tongan actually spoken; defaults to prompt.tongan, correctable in review."
+    },
+    "english": { "type": "string", "minLength": 1 },
+    "audio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sourcePath", "durationMs", "sampleRate", "channels", "codec", "originalCodec", "bytes"],
+      "properties": {
+        "path": { "type": "string", "pattern": "^corpus/[^/]+/audio\\.flac$" },
+        "sourcePath": { "type": "string", "pattern": "^submissions/[^/]+/source\\." },
+        "durationMs": { "type": "number", "exclusiveMinimum": 0 },
+        "sampleRate": { "type": "integer", "const": 24000 },
+        "channels": { "type": "integer", "const": 1 },
+        "codec": { "type": "string", "const": "flac" },
+        "originalCodec": { "type": "string", "minLength": 1 },
+        "bytes": { "type": "integer", "exclusiveMinimum": 0 }
+      }
+    },
+    "status": { "enum": ["pending", "approved", "rejected"] },
+    "qualityFlags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reviewerId": { "type": ["string", "null"] },
+        "reviewedAt": { "type": ["string", "null"], "description": "ISO 8601 / Firestore timestamp" },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+    "consent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "confirmedAge", "confirmedOwnVoice", "confirmedLicense", "at"],
+      "properties": {
+        "version": { "type": "string", "minLength": 1 },
+        "confirmedAge": { "type": "boolean", "const": true },
+        "confirmedOwnVoice": { "type": "boolean", "const": true },
+        "confirmedLicense": { "type": "boolean", "const": true },
+        "at": { "type": "string", "description": "ISO 8601 / Firestore timestamp" }
+      },
+      "description": "All three confirmations must be true for a valid contribution."
+    },
+    "releases": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Dataset release versions that include this clip."
+    },
+    "createdAt": { "type": "string", "description": "ISO 8601 / Firestore timestamp" },
+    "updatedAt": { "type": "string", "description": "ISO 8601 / Firestore timestamp" }
+  }
+}
