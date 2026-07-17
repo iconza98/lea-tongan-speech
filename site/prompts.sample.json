@@ -1,0 +1,7 @@
+[
+  { "promptId": "greet-001", "tongan": "Mālō e lelei", "english": "Hello", "tags": ["greetings"] },
+  { "promptId": "greet-002", "tongan": "Fēfē hake?", "english": "How are you?", "tags": ["greetings"] },
+  { "promptId": "greet-003", "tongan": "ʻOku ou sai pē, mālō", "english": "I'm fine, thank you", "tags": ["greetings"] },
+  { "promptId": "num-001", "tongan": "Taha, ua, tolu", "english": "One, two, three", "tags": ["numbers"] },
+  { "promptId": "every-001", "tongan": "ʻOku ou fie inu vai", "english": "I want to drink water", "tags": ["everyday"] }
+]
