@@ -10,7 +10,7 @@
     "public": "site",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
-      { "source": "/api/submit", "function": "submitContribution" }
+      { "source": "/api/submit", "function": { "functionId": "submitContribution", "region": "us-west1" } }
     ]
   },
   "emulators": {

@@ -12,6 +12,7 @@
  *                                                     clips/{clipId} (status: approved)
  *   reviewer ──onCall──▶ rejectClip  ──▶  clips/{clipId} (status: rejected)
  */
+import { setGlobalOptions } from "firebase-functions/v2";
 import { onRequest, onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
@@ -22,6 +23,9 @@ import { readFileSync, statSync, rmSync } from "fs";
 import Busboy from "busboy";
 import { validateMeta, ValidationError } from "./lib/validateMeta";
 import { transcodeToFlac, probeDurationMs } from "./lib/transcode";
+
+// Deploy all functions to us-west1 (Oregon).
+setGlobalOptions({ region: "us-west1" });
 
 admin.initializeApp();
 const db = admin.firestore();
