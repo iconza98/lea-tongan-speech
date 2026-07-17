@@ -1,0 +1,64 @@
+# =============================================================================
+#  Secrets / credentials — NEVER commit. This is a PUBLIC repo.
+# =============================================================================
+.env
+.env.*
+*.env
+service-account.json
+*service-account*.json
+FIREBASE_SERVICE_ACCOUNT_*.json
+google-services.json
+GoogleService-Info.plist
+*.pem
+*.key
+.firebaserc.local
+
+# =============================================================================
+#  Corpus audio — large + license-sensitive. Lives in the Storage bucket and
+#  the published Hugging Face Dataset, NOT in git. (Also stops UCLA/NCEA
+#  eval audio from ever being committed — it is reference-only, never rehosted.)
+# =============================================================================
+/data/corpus/
+/eval/**/gold-audio/
+*.wav
+*.mp3
+*.flac
+*.webm
+*.ogg
+*.m4a
+
+# =============================================================================
+#  Model weights / checkpoints — distributed via Hugging Face, not git.
+# =============================================================================
+/model/**/checkpoints/
+/model/**/weights/
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.bin
+*.onnx
+
+# =============================================================================
+#  Build / tooling
+# =============================================================================
+node_modules/
+dist/
+build/
+npm-debug.log*
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+*.egg-info/
+/eval/runs/
+.firebase/
+firebase-debug.log
+
+# =============================================================================
+#  OS / editor
+# =============================================================================
+.DS_Store
+.idea/
+.vscode/
