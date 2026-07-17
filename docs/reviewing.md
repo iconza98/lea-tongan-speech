@@ -23,16 +23,26 @@ Firestore edit, no code change or redeploy.
 1. **Create the account.** In the [Firebase Console](https://console.firebase.google.com/project/lea-tongan-speech/authentication/users)
    → Authentication → Users → *Add user*, create an email/password account for the reviewer
    (or have them sign up, then note the email).
-2. **Add the email to the allowlist.** In Firestore, open `adminConfig/reviewers` and add the
-   reviewer's email to the `emails` array. Create the document with `{ emails: ["…"] }` if it
-   doesn't exist yet.
+2. **Add the email to the allowlist.** Run:
+
+   ```bash
+   node scripts/reviewers.mjs add reviewer@example.com
+   ```
+
+   (Or edit Firestore `adminConfig/reviewers` by hand: add the email to the `emails` array,
+   creating the document as `{ emails: ["…"] }` if it doesn't exist yet.)
 3. That's it — the change takes effect on their next call; `assertReviewer` reads the list fresh
    each time.
 
 ## Remove a reviewer
 
-Delete the email from `adminConfig/reviewers.emails`. The account can stay in Authentication —
-without an allowlisted email it can sign in but every action returns `permission-denied`.
+```bash
+node scripts/reviewers.mjs remove reviewer@example.com
+```
+
+This deletes the email from `adminConfig/reviewers.emails`. The account can stay in Authentication —
+without an allowlisted email it can sign in but every action returns `permission-denied`. Use
+`node scripts/reviewers.mjs list` to see the current allowlist.
 
 ## Rotate a reviewer password
 
