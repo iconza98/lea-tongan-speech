@@ -20,6 +20,10 @@ GoogleService-Info.plist
 # =============================================================================
 /data/corpus/
 /eval/**/gold-audio/
+# UCLA/NCEA reference data — CC BY-NC-SA / BY-NC, eval-only, NEVER committed
+ucla-lexicon.json
+ncea-*.json
+**/reference-data/
 *.wav
 *.mp3
 *.flac
