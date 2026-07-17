@@ -165,6 +165,32 @@ export const rejectClip = onCall(
   }
 );
 
+// ── Reviewer-gated: list pending clips (for the review UI) ────────────────────
+export const listPendingClips = onCall(async (request: CallableRequest<unknown>) => {
+  await assertReviewer(request);
+  const snap = await db.collection("clips").where("status", "==", "pending").limit(50).get();
+  const clips = snap.docs.map((d) => {
+    const x = d.data() as Record<string, unknown>;
+    return { clipId: x.clipId, promptId: x.promptId, transcript: x.transcript, english: x.english, speakerId: x.speakerId };
+  });
+  return { clips };
+});
+
+// ── Reviewer-gated: fetch a clip's raw audio (base64) for playback ────────────
+export const getClipAudio = onCall(async (request: CallableRequest<{ clipId?: string }>) => {
+  await assertReviewer(request);
+  const clipId = request.data?.clipId;
+  if (!clipId) throw new HttpsError("invalid-argument", "clipId required");
+  const snap = await db.collection("clips").doc(clipId).get();
+  if (!snap.exists) throw new HttpsError("not-found", "clip not found");
+  const clip = snap.data() as { audio: { sourcePath: string; originalCodec: string } };
+  const [buf] = await bucket.file(clip.audio.sourcePath).download();
+  const ext = clip.audio.originalCodec || "webm";
+  const contentType =
+    ext === "wav" ? "audio/wav" : ext === "mp3" ? "audio/mpeg" : ext === "ogg" ? "audio/ogg" : "audio/webm";
+  return { base64: buf.toString("base64"), contentType };
+});
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 async function assertReviewer(request: CallableRequest<unknown>): Promise<void> {
   const email = request.auth?.token?.email;

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lea Tongan Speech — Reviewer</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Lea Tongan Speech · Reviewer</div>
+    <div class="tabs">
+      <a class="tab" href="index.html">← Site</a>
+      <button class="tab" id="btn-signout" hidden>Sign out</button>
+    </div>
+  </header>
+
+  <main class="view is-active">
+    <!-- Sign in -->
+    <section class="card" id="signin-card">
+      <h1>Reviewer sign-in</h1>
+      <p>Only allowlisted reviewers can approve clips. Sign in with your reviewer email.</p>
+      <div class="signin-form">
+        <label>Email <input type="email" id="email" autocomplete="username" /></label>
+        <label>Password <input type="password" id="password" autocomplete="current-password" /></label>
+        <button class="btn btn-primary" id="btn-signin">Sign in</button>
+      </div>
+      <div id="signin-status" class="status"></div>
+    </section>
+
+    <!-- Review queue -->
+    <section class="card" id="queue-card" hidden>
+      <h1>Review queue</h1>
+      <div id="who" class="fine"></div>
+      <div id="queue-summary" class="summary">Loading…</div>
+      <div id="queue"></div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span>Code Apache-2.0 · Dataset CC BY 4.0</span>
+    <a href="https://github.com/iconza98/lea-tongan-speech" target="_blank" rel="noopener">Source</a>
+  </footer>
+
+  <script src="config.js"></script>
+  <script type="module" src="review.js"></script>
+</body>
+</html>
