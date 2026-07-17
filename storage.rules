@@ -1,0 +1,19 @@
+rules_version = '2';
+
+// Open-corpus bucket. Clients never write audio directly — the Cloud Functions (admin SDK) do,
+// bypassing these rules. Published corpus audio is world-readable (CC BY 4.0); raw submissions are
+// private (they may hold not-yet-reviewed / not-yet-approved recordings).
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /corpus/{clipId}/{file} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /submissions/{clipId}/{file} {
+      allow read, write: if false;
+    }
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,31 @@
+rules_version = '2';
+
+// All writes go through the Cloud Functions (admin SDK), which bypass these rules. Clients get
+// read-only access to what is meant to be public: seed prompts and APPROVED clips (for the dataset
+// browser). Pending/rejected clips, speaker records, and admin config are never client-readable.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /prompts/{promptId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /clips/{clipId} {
+      allow read: if resource.data.status == 'approved';
+      allow write: if false;
+    }
+
+    match /speakers/{speakerId} {
+      allow read, write: if false;
+    }
+
+    match /adminConfig/{doc} {
+      allow read, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
