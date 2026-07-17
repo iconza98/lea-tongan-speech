@@ -1,0 +1,19 @@
+# gitleaks config for lea-tongan-speech (public repo).
+# Enforces CONTRIBUTING.md hard rule #1: never commit secrets (service-account keys, .env,
+# credentialed Firebase config). Uses gitleaks' default rule set, minus the intentionally-public
+# Firebase browser API key.
+title = "lea-tongan-speech"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = """
+The Firebase browser API key in site/config.js is public by design — it identifies the project
+to the client SDK and is NOT a secret. Access is controlled by Firestore/Storage security rules,
+not by keeping this key private. It matches the default gcp-api-key rule, so allowlist that exact
+value. Any OTHER key-shaped string is still flagged.
+"""
+regexes = [
+  '''AIzaSyBXRcJxYi8rzr-4tnfZnNYsZ0MnJuAQm_8''',
+]
