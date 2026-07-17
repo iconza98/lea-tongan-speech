@@ -1,9 +1,9 @@
 // Runtime config for the Contribute site. No secrets here — this file is public.
 window.LTS_CONFIG = {
   // The Cloud Function endpoint that accepts a contribution (multipart: audio + meta).
-  // null → the site runs in STUB mode: it validates and assembles the payload but does not
-  // upload (logs to console + lets you play back). Set this once the Firebase project exists.
-  submitEndpoint: null,
+  // Served same-origin via the hosting rewrite (firebase.json → submitContribution).
+  // Set to null to force STUB mode (assemble payload, log, no upload).
+  submitEndpoint: "/api/submit",
 
   // Must match the consentVersion in docs/CONSENT.md. Stamped on every submitted clip.
   consentVersion: "2026-07-16-v1",

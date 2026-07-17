@@ -25,8 +25,10 @@ import { transcodeToFlac, probeDurationMs } from "./lib/transcode";
 
 admin.initializeApp();
 const db = admin.firestore();
-// TODO(project): the open-corpus bucket. Defaults to the project's bucket; override once known.
-const bucket = admin.storage().bucket();
+// The open-corpus bucket (australia-southeast1). Accessed only by this admin SDK — clients never
+// write to Storage directly, so no Firebase Storage security rules are needed.
+const BUCKET_NAME = process.env.CORPUS_BUCKET || "lea-tongan-speech-corpus";
+const bucket = admin.storage().bucket(BUCKET_NAME);
 
 const EXT_BY_MIME: Record<string, string> = {
   "audio/webm": "webm",
@@ -39,7 +41,10 @@ const EXT_BY_MIME: Record<string, string> = {
 
 // ── Public: accept a contribution ────────────────────────────────────────────
 export const submitContribution = onRequest(
-  { cors: true, memory: "256MiB" },
+  // invoker:"public" — anyone can submit a contribution (a public endpoint). The callables
+  // (acceptClip/rejectClip) enforce auth INSIDE via assertReviewer; their Cloud Run services are
+  // granted allUsers run.invoker manually (re-grant after any redeploy that resets IAM).
+  { cors: true, memory: "256MiB", invoker: "public" },
   async (req, res) => {
     if (req.method !== "POST") {
       res.status(405).send("POST only");
