@@ -6,10 +6,11 @@ Recorded:
 
 - [`0001`](./0001-canonical-audio-format.md) — Canonical audio format (24 kHz mono FLAC).
 - [`0002`](./0002-consent-model.md) — Consent model (18+ open-license grant, versioned, forward-only).
+- [`0003`](./0003-region-strategy.md) — Region strategy (data in Sydney, functions in us-west1).
 
 Planned:
 
-- `0003` — Multi-speaker, CC BY 4.0 dataset; UCLA/NCEA eval-only.
+- `0004` — Multi-speaker, CC BY 4.0 dataset; UCLA/NCEA eval-only.
 
 A companion ADR lives in the **app** repo, superseding `docs/research/tts-roadmap.md` §2
 ("no separate repo") to record the deliberate reversal and the stable-endpoint seam.

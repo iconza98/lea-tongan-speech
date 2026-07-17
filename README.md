@@ -44,6 +44,14 @@ data/       Corpus schema + fetch scripts for eval gold-sets (NO audio committed
 docs/       Design, consent, corpus schema, ADRs
 ```
 
+## Infrastructure
+
+Firebase project `lea-tongan-speech`. **Data** (Firestore + the `lea-tongan-speech-corpus` bucket)
+lives in **australia-southeast1 (Sydney)**, near the contributor community; **Cloud Functions** run in
+**us-west1 (Oregon)**, near the US model/tooling ecosystem. This deliberate data/compute split is
+recorded in [`docs/adr/0003`](./docs/adr/0003-region-strategy.md). The site is served from Firebase
+Hosting at https://lea-tongan-speech.web.app.
+
 ## Relationship to the Lea Fakatonga app
 
 This project is a standalone spin-out. The app talks to the model through a single stable
