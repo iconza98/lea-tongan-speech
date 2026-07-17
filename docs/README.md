@@ -3,6 +3,7 @@
 Design and governance documents for Lea Tongan Speech.
 
 - [`CONSENT.md`](./CONSENT.md) — contributor consent + open-license text (**draft**, needs review).
+- [`reviewing.md`](./reviewing.md) — how clip moderation is gated, and how to add, remove, or rotate a reviewer.
 - `corpus-schema.md` — clip/corpus data model *(TBD — Phase 1)*.
 - [`adr/`](./adr) — Architecture Decision Records for this repo.
 
