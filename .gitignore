@@ -23,7 +23,12 @@ GoogleService-Info.plist
 # UCLA/NCEA reference data — CC BY-NC-SA / BY-NC, eval-only, NEVER committed
 ucla-lexicon.json
 ncea-*.json
+gold-set.json
+ncea-gold-set.json
 **/reference-data/
+# TTS probe synthesis output
+model/tts/samples/
+model/tts/*.zip
 *.wav
 *.mp3
 *.flac

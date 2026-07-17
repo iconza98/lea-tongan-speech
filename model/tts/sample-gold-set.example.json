@@ -1,0 +1,9 @@
+{
+  "note": "Tiny own-authored example so probe_zonos2.py --dry-run runs without the real (eval-only) gold-sets. Replace with a real gold-set (git-ignored, reference-only) for an actual GPU run.",
+  "words": [
+    { "slug": "ufi",    "tongan": "ʻufi",   "ipa": "ˈʔufi" },
+    { "slug": "kuma",   "tongan": "kumā",   "ipa": "kuˈmaː" },
+    { "slug": "malohi", "tongan": "mālohi", "ipa": "maːˈlohi" },
+    { "slug": "ako",    "tongan": "ʻako",   "ipa": "ˈʔako" }
+  ]
+}
