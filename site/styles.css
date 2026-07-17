@@ -70,6 +70,17 @@ select { font: inherit; padding: .45rem; border-radius: 8px; border: 1px solid v
 .status.is-error { color: var(--danger); }
 .stub { color: var(--muted); }
 
+.summary { color: var(--muted); margin: .6rem 0; }
+.tblwrap { overflow-x: auto; }
+.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.tbl th, .tbl td { text-align: left; padding: .5rem .7rem; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.tbl th { color: var(--muted); font-weight: 600; }
+.tbl tbody tr:hover { background: rgba(255,255,255,.03); }
+.rows { margin-top: .6rem; }
+.row { display: flex; justify-content: space-between; gap: 1rem; padding: .5rem .2rem; border-bottom: 1px solid var(--line); }
+.row-to { font-weight: 600; }
+.row-en { color: var(--muted); }
+
 .foot {
   display: flex; justify-content: space-between; max-width: 720px; margin: 1rem auto;
   padding: 1rem 1.2rem; color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line);

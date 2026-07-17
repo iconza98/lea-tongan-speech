@@ -16,6 +16,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /evalRuns/{runId} {
+      allow read: if true;   // public model scorecards (leaderboard)
+      allow write: if false;
+    }
+
     match /speakers/{speakerId} {
       allow read, write: if false;
     }

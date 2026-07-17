@@ -101,9 +101,10 @@
   <main id="view-browse" class="view">
     <section class="card">
       <h1>Dataset</h1>
-      <p class="stub">Browse and download the published CC BY 4.0 corpus here.
-         <br />Coming online once the first release is exported (needs the backend + Firebase project).</p>
-      <p class="fine">Licence: <a href="../DATASET_LICENSE" target="_blank" rel="noopener">CC BY 4.0</a>.</p>
+      <p>Approved contributions, published under <a href="../DATASET_LICENSE" target="_blank" rel="noopener">CC BY 4.0</a>.
+         A downloadable release is exported once there are enough clips.</p>
+      <div id="dataset-summary" class="summary">Loading…</div>
+      <div id="dataset-list" class="rows"></div>
     </section>
   </main>
 
@@ -111,8 +112,9 @@
   <main id="view-leaderboard" class="view">
     <section class="card">
       <h1>Model leaderboard</h1>
-      <p class="stub">Model scorecards over time — CER, speaker similarity, and G2P/ʻokina coverage.
-         <br />Populated by the <code>eval/</code> harness once models start training.</p>
+      <p>Scorecards from the <code>eval/</code> harness — G2P/ʻokina coverage now; CER, speaker
+         similarity, and MOS as models arrive.</p>
+      <div id="leaderboard-body">Loading…</div>
     </section>
   </main>
 

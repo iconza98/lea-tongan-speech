@@ -13,4 +13,9 @@ window.LTS_CONFIG = {
 
   // Max recording length (seconds) — keeps clips short and storage sane.
   maxRecordSeconds: 15,
+
+  // Public Firebase config for read-only Firestore REST access (Dataset + Leaderboard tabs).
+  // The API key is a browser key — public by design, not a secret.
+  projectId: "lea-tongan-speech",
+  firebaseApiKey: "AIzaSyBXRcJxYi8rzr-4tnfZnNYsZ0MnJuAQm_8",
 };

@@ -12,8 +12,74 @@
       document.querySelectorAll(".view").forEach((v) => v.classList.remove("is-active"));
       tab.classList.add("is-active");
       $("view-" + tab.dataset.view).classList.add("is-active");
+      onViewShown(tab.dataset.view);
     });
   });
+
+  // ── Firestore read (Dataset + Leaderboard tabs) ─────────────────────────────
+  const FS = `https://firestore.googleapis.com/v1/projects/${cfg.projectId}/databases/(default)/documents`;
+  const loaded = {};
+  function onViewShown(view) {
+    if (view === "leaderboard" && !loaded.leaderboard) { loaded.leaderboard = true; loadLeaderboard(); }
+    if (view === "browse" && !loaded.browse) { loaded.browse = true; loadDataset(); }
+  }
+  function decodeVal(v) {
+    if ("stringValue" in v) return v.stringValue;
+    if ("integerValue" in v) return Number(v.integerValue);
+    if ("doubleValue" in v) return v.doubleValue;
+    if ("booleanValue" in v) return v.booleanValue;
+    if ("nullValue" in v) return null;
+    if ("arrayValue" in v) return (v.arrayValue.values || []).map(decodeVal);
+    if ("mapValue" in v) return decodeFields(v.mapValue.fields || {});
+    if ("timestampValue" in v) return v.timestampValue;
+    return null;
+  }
+  function decodeFields(fields) { const o = {}; for (const k in fields) o[k] = decodeVal(fields[k]); return o; }
+  const pct = (r) => (r === null || r === undefined ? "—" : Math.round(r * 100) + "%");
+
+  async function loadLeaderboard() {
+    const el = $("leaderboard-body");
+    try {
+      const res = await fetch(`${FS}/evalRuns?key=${cfg.firebaseApiKey}&pageSize=100`);
+      const docs = (await res.json()).documents || [];
+      if (!docs.length) { el.innerHTML = '<p class="stub">No scorecards yet — the eval harness publishes them as models are evaluated.</p>'; return; }
+      const rows = docs.map((d) => decodeFields(d.fields)).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+      el.innerHTML =
+        '<div class="tblwrap"><table class="tbl"><thead><tr>' +
+        "<th>Model</th><th>Date</th><th>ʻokina</th><th>macron</th><th>CER</th><th>Sim</th><th>MOS</th>" +
+        "</tr></thead><tbody>" +
+        rows.map((r) => {
+          const g = (r.metrics && r.metrics.g2p_coverage) || {};
+          return `<tr><td>${esc(r.model)}</td><td>${esc(r.date)}</td>` +
+            `<td>${pct(g.okina && g.okina.rate)}</td><td>${pct(g.macron && g.macron.rate)}</td>` +
+            `<td>${r.metrics && r.metrics.cer != null ? r.metrics.cer : "—"}</td>` +
+            `<td>${r.metrics && r.metrics.speaker_similarity != null ? r.metrics.speaker_similarity : "—"}</td>` +
+            `<td>${r.metrics && r.metrics.mos != null ? r.metrics.mos : "—"}</td></tr>`;
+        }).join("") +
+        "</tbody></table></div>";
+    } catch (err) { el.innerHTML = `<p class="stub">Couldn't load scorecards (${esc(String(err))}).</p>`; }
+  }
+
+  async function loadDataset() {
+    const summary = $("dataset-summary"), list = $("dataset-list");
+    try {
+      const res = await fetch(`${FS}:runQuery?key=${cfg.firebaseApiKey}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ structuredQuery: {
+          from: [{ collectionId: "clips" }],
+          where: { fieldFilter: { field: { fieldPath: "status" }, op: "EQUAL", value: { stringValue: "approved" } } },
+          limit: 200,
+        } }),
+      });
+      const clips = (await res.json()).filter((r) => r.document).map((r) => decodeFields(r.document.fields));
+      if (!clips.length) { summary.textContent = "No published clips yet — be the first to contribute your voice."; list.innerHTML = ""; return; }
+      summary.textContent = `${clips.length} approved clip${clips.length === 1 ? "" : "s"}.`;
+      list.innerHTML = clips.map((c) =>
+        `<div class="row"><span class="row-to">${esc(c.transcript)}</span><span class="row-en">${esc(c.english)}</span></div>`
+      ).join("");
+    } catch (err) { summary.textContent = "Couldn't load the dataset (" + String(err) + ")."; }
+  }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 
   // ── State ─────────────────────────────────────────────────────────────────
   const state = {
