@@ -1,0 +1,39 @@
+name: Deploy Hosting
+
+# Auto-deploy the public site (site/) to Firebase Hosting on merge to main.
+# Only hosting is deployed here — Cloud Functions / Firestore rules are deployed
+# separately. Requires a repo secret FIREBASE_SERVICE_ACCOUNT (see docs/deploy.md).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "firebase.json"
+      - ".firebaserc"
+      - ".github/workflows/deploy-hosting.yml"
+  workflow_dispatch: {} # allow manual "Run workflow" from the Actions tab
+
+permissions:
+  contents: read
+
+# Never let two deploys race; cancel an in-flight run when a newer commit lands.
+concurrency:
+  group: firebase-hosting-live
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Skip on forks: the secret is not available to fork PRs, so the job would fail.
+    if: github.repository == 'iconza98/lea-tongan-speech'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Firebase Hosting (live channel)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: lea-tongan-speech
+          channelId: live
