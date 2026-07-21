@@ -50,7 +50,8 @@ Firebase project `lea-tongan-speech`. **Data** (Firestore + the `lea-tongan-spee
 lives in **australia-southeast1 (Sydney)**, near the contributor community; **Cloud Functions** run in
 **us-west1 (Oregon)**, near the US model/tooling ecosystem. This deliberate data/compute split is
 recorded in [`docs/adr/0003`](./docs/adr/0003-region-strategy.md). The site is served from Firebase
-Hosting at https://lea-tongan-speech.web.app.
+Hosting at https://lea-tongan-speech.web.app, and **auto-deploys on merge to `main`** — see
+[`docs/deploy.md`](./docs/deploy.md).
 
 ## Relationship to the Lea Fakatonga app
 
