@@ -1,6 +1,8 @@
 # site/
 
-Public website (Firebase Hosting). Three surfaces:
+Public website (Firebase Hosting). The site root (`index.html`) is the **landing page** — a
+mission-driven intro that funnels visitors into the contribute tool (`contribute.html`), which
+hosts three surfaces:
 
 - **Contribute** — record → consent ([`../docs/CONSENT.md`](../docs/CONSENT.md)) → grant CC BY 4.0 →
   submit. **Built** (front-end). Currently runs in **stub mode**: it captures audio, gates on the
@@ -9,12 +11,16 @@ Public website (Firebase Hosting). Three surfaces:
 - **Dataset** — browse/download the published CC BY 4.0 corpus. *Stub (needs the export + backend).*
 - **Leaderboard** — model scorecards from `eval/`. *Stub (needs models).*
 
+A separate **Reviewer** page (`review.html`) lets allowlisted reviewers approve/reject clips.
+
 ## Files
 
 | File | Role |
 |---|---|
-| `index.html` | markup + the three views |
-| `styles.css` | styling |
+| `index.html` | landing page (mission intro + TikTok, CTAs → `contribute.html`) |
+| `contribute.html` | the contribute tool — markup + the three views (Contribute / Dataset / Leaderboard) |
+| `review.html` | reviewer sign-in + moderation queue (`review.js`) |
+| `styles.css` | styling (Lea Fakatonga brand — shared by all pages) |
 | `app.js` | recorder (MediaRecorder), consent gate, demographics, submit |
 | `config.js` | **public** runtime config — `submitEndpoint` (null = stub), `consentVersion`, prompts URL, max length |
 | `prompts.sample.json` | seed prompts to read (Tongan + English) |

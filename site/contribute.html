@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lea Tongan Speech — Contribute your voice</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" style="color:inherit; display:flex; align-items:center; gap:8px;">← Lea Tongan Speech</a>
+    <nav class="tabs">
+      <button class="tab is-active" data-view="contribute">Contribute</button>
+      <button class="tab" data-view="browse">Dataset</button>
+      <button class="tab" data-view="leaderboard">Leaderboard</button>
+    </nav>
+  </header>
+
+  <!-- ─────────────── CONTRIBUTE ─────────────── -->
+  <main id="view-contribute" class="view is-active">
+    <section class="card intro">
+      <h1>Mālō e lelei — help build an open voice for Tongan</h1>
+      <p>Read the Tongan phrase aloud and record it. Your clip joins an open dataset that trains
+         freely-shared Tongan speech tools. Please read the consent before you start.</p>
+    </section>
+
+    <!-- Consent gate -->
+    <section class="card" id="consent-gate">
+      <h2>Before you record</h2>
+      <label class="check"><input type="checkbox" id="c-age" />
+        I am <strong>18 or older</strong> (or a parent/guardian consenting for someone under 18).</label>
+      <label class="check"><input type="checkbox" id="c-voice" />
+        The voice I record is <strong>my own</strong> and I have the right to share it.</label>
+      <label class="check"><input type="checkbox" id="c-license" />
+        I release my recording and its text under <strong>CC BY&nbsp;4.0</strong> — a public,
+        permanent, open licence that lets anyone (including commercial users) use it with credit,
+        and I understand <strong>this cannot be undone</strong> once published.</label>
+      <p class="fine">Read the full <a href="../docs/CONSENT.md" target="_blank" rel="noopener">consent &amp; licence terms</a>.
+         Do not say your name or personal details inside the recording.</p>
+    </section>
+
+    <!-- Recording studio (disabled until consent) -->
+    <section class="card studio" id="studio" aria-disabled="true">
+      <div class="prompt">
+        <div class="prompt-label">Read this aloud</div>
+        <div class="prompt-tongan" id="prompt-tongan">…</div>
+        <div class="prompt-english" id="prompt-english">…</div>
+        <div class="prompt-progress" id="prompt-progress"></div>
+      </div>
+
+      <div class="recorder">
+        <button id="btn-record" class="btn btn-record" disabled>● Record</button>
+        <span id="rec-timer" class="timer">0.0s</span>
+        <audio id="playback" controls hidden></audio>
+      </div>
+
+      <details class="demographics">
+        <summary>Optional: about your voice (helps the dataset — all optional)</summary>
+        <div class="demo-grid">
+          <label>Island / dialect
+            <select id="d-island">
+              <option value="">Prefer not to say</option>
+              <option value="tongatapu">Tongatapu</option>
+              <option value="vavau">Vavaʻu</option>
+              <option value="haapai">Haʻapai</option>
+              <option value="eua">ʻEua</option>
+              <option value="niuatoputapu">Niuatoputapu</option>
+              <option value="niuafoou">Niuafoʻou</option>
+              <option value="diaspora">Diaspora</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+          <label>Age range
+            <select id="d-age">
+              <option value="">Prefer not to say</option>
+              <option>18-24</option><option>25-34</option><option>35-44</option>
+              <option>45-54</option><option>55-64</option><option>65+</option>
+            </select>
+          </label>
+          <label>Gender
+            <select id="d-gender">
+              <option value="">Prefer not to say</option>
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+              <option value="nonbinary">Non-binary</option>
+              <option value="self_describe">Prefer to self-describe</option>
+            </select>
+          </label>
+        </div>
+      </details>
+
+      <div class="actions">
+        <button id="btn-skip" class="btn btn-ghost">Skip this phrase</button>
+        <button id="btn-submit" class="btn btn-primary" disabled>Submit &amp; next</button>
+      </div>
+      <div id="status" class="status" role="status"></div>
+    </section>
+  </main>
+
+  <!-- ─────────────── DATASET (stub) ─────────────── -->
+  <main id="view-browse" class="view">
+    <section class="card">
+      <h1>Dataset</h1>
+      <p>Approved contributions, published under <a href="../DATASET_LICENSE" target="_blank" rel="noopener">CC BY 4.0</a>.
+         A downloadable release is exported once there are enough clips.</p>
+      <div id="dataset-summary" class="summary">Loading…</div>
+      <div id="dataset-list" class="rows"></div>
+    </section>
+  </main>
+
+  <!-- ─────────────── LEADERBOARD (stub) ─────────────── -->
+  <main id="view-leaderboard" class="view">
+    <section class="card">
+      <h1>Model leaderboard</h1>
+      <p>Scorecards from the <code>eval/</code> harness — G2P/ʻokina coverage now; CER, speaker
+         similarity, and MOS as models arrive.</p>
+      <div id="leaderboard-body">Loading…</div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span>Code Apache-2.0 · Dataset CC BY 4.0</span>
+    <span><a href="review.html">Reviewer</a> · <a href="https://github.com/iconza98/lea-tongan-speech" target="_blank" rel="noopener">Source</a></span>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,129 +1,203 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Lea Tongan Speech — Contribute your voice</title>
-  <link rel="stylesheet" href="styles.css" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lea Tongan Speech — An open voice for the Tongan language</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  html { scroll-behavior:smooth; }
+  .lp-nav { position:sticky; top:0; z-index:20; display:flex; align-items:center; justify-content:space-between;
+    padding:16px 32px; background:rgba(26,26,46,.82); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
+  .lp-nav .links { display:flex; align-items:center; gap:28px; }
+  .lp-nav .links a { color:var(--muted); font-size:14px; font-weight:500; }
+  .lp-cta { display:inline-flex; align-items:center; gap:8px; background:var(--primary); color:#fff;
+    padding:12px 24px; border-radius:var(--radius-md); font-weight:600; }
+  .lp-cta.ghost { background:transparent; color:var(--primary); border:1px solid var(--primary); }
+  .lp-section { max-width:1120px; margin:0 auto; padding:80px 32px; }
+  .lp-section + .lp-section, .lp-hero + section { border-top:1px solid var(--border); }
+  .eyebrow { font-size:12px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--primary); margin-bottom:16px; }
+  .lp-hero { position:relative; padding:88px 32px 96px; overflow:hidden; }
+  .lp-hero .tapa { position:absolute; inset:0; background:url("assets/tapa-pattern.png") center/620px; opacity:.05; }
+  .lp-hero .grid { position:relative; max-width:1120px; margin:0 auto; display:grid; grid-template-columns:1.05fr .95fr; gap:56px; align-items:center; }
+  .lp-hero h1 { font-size:clamp(38px,8vw,60px); line-height:1.06; font-weight:800; letter-spacing:-.02em; margin:0 0 22px; }
+  .lp-hero h1 span { color:var(--primary); }
+  .lp-hero p { font-size:19px; line-height:1.6; color:var(--muted); max-width:520px; margin:0 0 36px; }
+  .hero-btns { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:40px; }
+  .stats { display:flex; gap:36px; flex-wrap:wrap; }
+  .stats .n { font-size:24px; font-weight:800; }
+  .stats .l { font-size:13px; color:var(--muted); }
+  .rec-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:28px; position:relative; overflow:hidden; }
+  .rec-card .word { text-align:center; font-size:36px; font-weight:700; letter-spacing:-.01em; margin:12px 0 8px; }
+  .wave { display:flex; align-items:flex-end; justify-content:center; gap:5px; height:56px; margin:22px 0; }
+  .wave i { width:5px; background:var(--primary); border-radius:9999px; }
+  .mic { width:64px; height:64px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center;
+    margin:0 auto; box-shadow:0 0 0 8px rgba(200,16,46,.16); color:#fff; }
+  .h2 { font-size:clamp(28px,5vw,40px); line-height:1.14; font-weight:700; letter-spacing:-.01em; margin:0 0 20px; }
+  .lead { font-size:18px; line-height:1.65; color:var(--muted); max-width:760px; }
+  .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .tile { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:26px; position:relative; overflow:hidden; }
+  .tile h3 { font-size:19px; font-weight:600; margin:0 0 8px; }
+  .tile p { font-size:15px; line-height:1.55; color:var(--muted); margin:0; }
+  .tile .ico { color:var(--secondary); margin-bottom:16px; }
+  .step .num { font-size:13px; font-weight:700; color:var(--secondary); margin-bottom:14px; }
+  .flow { display:flex; align-items:center; gap:18px; flex-wrap:wrap; margin-bottom:40px; }
+  .flow .node { display:inline-flex; align-items:center; gap:12px; padding:16px 22px; border-radius:12px; font-weight:600;
+    background:var(--surface); border:1px solid var(--border); }
+  .flow .node.red { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .video-grid { display:grid; grid-template-columns:.95fr 1.05fr; gap:56px; align-items:center; }
+  .video-frame { width:325px; max-width:100%; aspect-ratio:9/16; border-radius:20px; overflow:hidden; border:1px solid var(--border); background:#000; margin:0 auto; }
+  .video-frame iframe { width:100%; height:100%; border:0; display:block; }
+  .cta-banner { position:relative; overflow:hidden; background:var(--surface); border:1px solid rgba(200,16,46,.35); border-radius:var(--radius-md); padding:48px; text-align:center; }
+  .cta-banner .tapa { position:absolute; inset:0; background:url("assets/tapa-pattern.png") center/420px; opacity:.1; }
+  footer.lp { border-top:1px solid var(--border); background:#141428; padding:40px 32px; }
+  footer.lp .row { max-width:1120px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
+  @media (max-width:860px) {
+    .lp-hero .grid, .video-grid, .grid3, .grid2 { grid-template-columns:1fr !important; }
+  }
+  @media (max-width:640px) {
+    .lp-nav .links a:not(.lp-cta) { display:none; }
+    .lp-section { padding:56px 18px; } .lp-hero { padding:56px 18px 64px; }
+  }
+</style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">Lea Tongan Speech</div>
-    <nav class="tabs">
-      <button class="tab is-active" data-view="contribute">Contribute</button>
-      <button class="tab" data-view="browse">Dataset</button>
-      <button class="tab" data-view="leaderboard">Leaderboard</button>
-    </nav>
-  </header>
+<header class="lp-nav">
+  <a href="#top" style="font-weight:800; font-size:20px; letter-spacing:-.01em; color:var(--ink);">Lea Tongan Speech</a>
+  <nav class="links">
+    <a href="#why">The project</a>
+    <a href="#how">How it works</a>
+    <a href="#contribute">Contribute</a>
+    <a class="lp-cta" href="contribute.html">Contribute your voice</a>
+  </nav>
+</header>
 
-  <!-- ─────────────── CONTRIBUTE ─────────────── -->
-  <main id="view-contribute" class="view is-active">
-    <section class="card intro">
-      <h1>Mālō e lelei — help build an open voice for Tongan</h1>
-      <p>Read the Tongan phrase aloud and record it. Your clip joins an open dataset that trains
-         freely-shared Tongan speech tools. Please read the consent before you start.</p>
-    </section>
-
-    <!-- Consent gate -->
-    <section class="card" id="consent-gate">
-      <h2>Before you record</h2>
-      <label class="check"><input type="checkbox" id="c-age" />
-        I am <strong>18 or older</strong> (or a parent/guardian consenting for someone under 18).</label>
-      <label class="check"><input type="checkbox" id="c-voice" />
-        The voice I record is <strong>my own</strong> and I have the right to share it.</label>
-      <label class="check"><input type="checkbox" id="c-license" />
-        I release my recording and its text under <strong>CC BY&nbsp;4.0</strong> — a public,
-        permanent, open licence that lets anyone (including commercial users) use it with credit,
-        and I understand <strong>this cannot be undone</strong> once published.</label>
-      <p class="fine">Read the full <a href="../docs/CONSENT.md" target="_blank" rel="noopener">consent &amp; licence terms</a>.
-         Do not say your name or personal details inside the recording.</p>
-    </section>
-
-    <!-- Recording studio (disabled until consent) -->
-    <section class="card studio" id="studio" aria-disabled="true">
-      <div class="prompt">
-        <div class="prompt-label">Read this aloud</div>
-        <div class="prompt-tongan" id="prompt-tongan">…</div>
-        <div class="prompt-english" id="prompt-english">…</div>
-        <div class="prompt-progress" id="prompt-progress"></div>
+<section id="top" class="lp-hero">
+  <div class="tapa"></div>
+  <div class="grid">
+    <div>
+      <div class="eyebrow" style="display:inline-flex; align-items:center; gap:10px; padding:7px 14px; border-radius:9999px; background:var(--tapa-tint); border:1px solid rgba(200,16,46,.35); color:#f3b6bf;">Ko e leʻo ʻo Tonga — the voice of Tonga</div>
+      <h1>An open voice for the <span>Tongan</span> language.</h1>
+      <p>Lea faka-Tonga is spoken by generations, yet largely unseen by modern speech technology. We're building the open, community-owned recordings that teach machines to hear, read, and speak our language — one voice at a time.</p>
+      <div class="hero-btns">
+        <a class="lp-cta" href="contribute.html"><i data-lucide="mic"></i> Contribute your voice</a>
+        <a class="lp-cta ghost" href="#why">Why it matters</a>
       </div>
-
-      <div class="recorder">
-        <button id="btn-record" class="btn btn-record" disabled>● Record</button>
-        <span id="rec-timer" class="timer">0.0s</span>
-        <audio id="playback" controls hidden></audio>
+      <div class="stats">
+        <div><div class="n">3 tools</div><div class="l">Speech · text · translation</div></div>
+        <div><div class="n">100% open</div><div class="l">CC BY 4.0 dataset</div></div>
+        <div><div class="n">Community-owned</div><div class="l">By and for the diaspora</div></div>
       </div>
-
-      <details class="demographics">
-        <summary>Optional: about your voice (helps the dataset — all optional)</summary>
-        <div class="demo-grid">
-          <label>Island / dialect
-            <select id="d-island">
-              <option value="">Prefer not to say</option>
-              <option value="tongatapu">Tongatapu</option>
-              <option value="vavau">Vavaʻu</option>
-              <option value="haapai">Haʻapai</option>
-              <option value="eua">ʻEua</option>
-              <option value="niuatoputapu">Niuatoputapu</option>
-              <option value="niuafoou">Niuafoʻou</option>
-              <option value="diaspora">Diaspora</option>
-              <option value="other">Other</option>
-            </select>
-          </label>
-          <label>Age range
-            <select id="d-age">
-              <option value="">Prefer not to say</option>
-              <option>18-24</option><option>25-34</option><option>35-44</option>
-              <option>45-54</option><option>55-64</option><option>65+</option>
-            </select>
-          </label>
-          <label>Gender
-            <select id="d-gender">
-              <option value="">Prefer not to say</option>
-              <option value="female">Female</option>
-              <option value="male">Male</option>
-              <option value="nonbinary">Non-binary</option>
-              <option value="self_describe">Prefer to self-describe</option>
-            </select>
-          </label>
-        </div>
-      </details>
-
-      <div class="actions">
-        <button id="btn-skip" class="btn btn-ghost">Skip this phrase</button>
-        <button id="btn-submit" class="btn btn-primary" disabled>Submit &amp; next</button>
+    </div>
+    <div class="rec-card">
+      <div class="prompt-label" style="text-align:center;">Read this aloud</div>
+      <div class="word">Mālō e lelei</div>
+      <div style="text-align:center; color:var(--muted); font-size:15px;">Hello / a common Tongan greeting</div>
+      <div class="wave">
+        <i style="height:22%"></i><i style="height:48%"></i><i style="height:80%"></i><i style="height:55%"></i>
+        <i style="height:100%"></i><i style="height:70%; background:var(--secondary)"></i><i style="height:38%; background:var(--secondary)"></i>
+        <i style="height:64%; background:var(--secondary)"></i><i style="height:90%"></i><i style="height:44%"></i><i style="height:30%"></i>
       </div>
-      <div id="status" class="status" role="status"></div>
-    </section>
-  </main>
+      <div class="mic"><i data-lucide="mic" style="width:26px;height:26px;"></i></div>
+      <div style="text-align:center; margin-top:14px; font-size:13px; color:var(--muted);">Tap to record · 0.0s</div>
+    </div>
+  </div>
+</section>
 
-  <!-- ─────────────── DATASET (stub) ─────────────── -->
-  <main id="view-browse" class="view">
-    <section class="card">
-      <h1>Dataset</h1>
-      <p>Approved contributions, published under <a href="../DATASET_LICENSE" target="_blank" rel="noopener">CC BY 4.0</a>.
-         A downloadable release is exported once there are enough clips.</p>
-      <div id="dataset-summary" class="summary">Loading…</div>
-      <div id="dataset-list" class="rows"></div>
-    </section>
-  </main>
+<section id="why" class="lp-section">
+  <div style="max-width:760px; margin-bottom:52px;">
+    <div class="eyebrow">Why this matters</div>
+    <h2 class="h2">Every language deserves to be heard by the future.</h2>
+    <p class="lead">Voice assistants, captions, and translation tools are trained on languages with millions of hours of recordings. Tongan has almost none. The result: the technology our children grow up with can't speak, read, or understand the language of their grandparents — and no company has an incentive to fix it. So we're doing it ourselves, in the open.</p>
+  </div>
+  <div class="grid3">
+    <div class="tile"><i data-lucide="globe" class="ico"></i><h3>Under-served, not unimportant</h3><p>Mainstream speech tech skips smaller languages. An open corpus is the only way Tongan gets a seat at the table.</p></div>
+    <div class="tile"><i data-lucide="users" class="ico"></i><h3>Built by the diaspora</h3><p>Recorded by fluent, native speakers across every island and community — so the dialects and diacritics stay true.</p></div>
+    <div class="tile"><i data-lucide="unlock" class="ico"></i><h3>Open forever</h3><p>Released under a permanent open licence so anyone — researchers, teachers, app makers — can build on it, with credit.</p></div>
+  </div>
+</section>
 
-  <!-- ─────────────── LEADERBOARD (stub) ─────────────── -->
-  <main id="view-leaderboard" class="view">
-    <section class="card">
-      <h1>Model leaderboard</h1>
-      <p>Scorecards from the <code>eval/</code> harness — G2P/ʻokina coverage now; CER, speaker
-         similarity, and MOS as models arrive.</p>
-      <div id="leaderboard-body">Loading…</div>
-    </section>
-  </main>
+<section class="lp-section" style="position:relative;">
+  <div class="video-grid">
+    <div>
+      <div class="eyebrow">See it in motion</div>
+      <h2 class="h2">The story behind the recordings.</h2>
+      <p class="lead" style="margin-bottom:28px;">Hear why this project started and what it means for keeping lea faka-Tonga alive for the next generation. Watch, then lend your voice.</p>
+      <a class="lp-cta ghost" href="https://www.tiktok.com/@ikani.samani/video/7661847744184683789" target="_blank" rel="noopener"><i data-lucide="external-link"></i> Watch on TikTok</a>
+    </div>
+    <div class="video-frame">
+      <iframe src="https://www.tiktok.com/embed/v2/7661847744184683789" allow="autoplay; encrypted-media; fullscreen" scrolling="no" title="Lea Tongan Speech on TikTok"></iframe>
+    </div>
+  </div>
+</section>
 
-  <footer class="foot">
-    <span>Code Apache-2.0 · Dataset CC BY 4.0</span>
-    <span><a href="review.html">Reviewer</a> · <a href="https://github.com/iconza98/lea-tongan-speech" target="_blank" rel="noopener">Source</a></span>
-  </footer>
+<section id="how" class="lp-section">
+  <div style="max-width:760px; margin-bottom:52px;">
+    <div class="eyebrow">How it works</div>
+    <h2 class="h2">One community corpus. Three open tools.</h2>
+    <p class="lead">Every consented recording joins a single open dataset. That corpus trains a family of freely-shared models — each one a tool your community can actually use.</p>
+  </div>
+  <div class="flow">
+    <div class="node red"><i data-lucide="mic"></i> Your voice</div>
+    <i data-lucide="arrow-right" style="color:var(--muted)"></i>
+    <div class="node"><i data-lucide="database" style="color:var(--secondary)"></i> Open corpus</div>
+    <i data-lucide="arrow-right" style="color:var(--muted)"></i>
+    <div class="node"><i data-lucide="sparkles" style="color:var(--secondary)"></i> Three models</div>
+  </div>
+  <div class="grid3">
+    <div class="tile"><i data-lucide="volume-2" class="ico" style="color:var(--primary)"></i><h3>Text-to-speech</h3><p>Read any Tongan text aloud in a natural voice — for learning apps, accessibility, and preservation.</p></div>
+    <div class="tile"><i data-lucide="captions" class="ico" style="color:var(--primary)"></i><h3>Speech-to-text</h3><p>Turn spoken Tongan into written Tongan — captions, transcripts, and search for a language that had none.</p></div>
+    <div class="tile"><i data-lucide="languages" class="ico" style="color:var(--primary)"></i><h3>Tongan → English</h3><p>Bridge the gap for a generation that understands more than it can read — translation grounded in real speech.</p></div>
+  </div>
+</section>
 
-  <script src="config.js"></script>
-  <script src="app.js"></script>
+<section id="contribute" class="lp-section">
+  <div style="max-width:760px; margin-bottom:52px;">
+    <div class="eyebrow">How to contribute</div>
+    <h2 class="h2">Three minutes. Three simple steps.</h2>
+    <p class="lead">No account, no app to install. If you speak Tongan, you can help — right from your browser.</p>
+  </div>
+  <div class="grid3" style="margin-bottom:52px;">
+    <div class="tile step"><div class="num">STEP 01</div><h3>Give consent</h3><p>Read the plain-language terms and confirm you're happy to share your recording under an open licence.</p></div>
+    <div class="tile step"><div class="num">STEP 02</div><h3>Read aloud</h3><p>A Tongan phrase appears. Tap record, say it naturally, and listen back — as many phrases as you like.</p></div>
+    <div class="tile step"><div class="num">STEP 03</div><h3>Submit</h3><p>Your clip is reviewed, then published to the open dataset — helping train tools for everyone.</p></div>
+  </div>
+  <div class="cta-banner">
+    <div class="tapa"></div>
+    <div style="position:relative;">
+      <h2 style="font-size:clamp(26px,5vw,34px); font-weight:800; margin:0 0 12px;">Lend your voice to lea faka-Tonga.</h2>
+      <p style="font-size:17px; color:var(--muted); max-width:520px; margin:0 auto 28px;">Your voice today becomes a tool your community can use tomorrow. It's free, open, and it starts with one phrase.</p>
+      <a class="lp-cta" href="contribute.html"><i data-lucide="mic"></i> Start contributing</a>
+    </div>
+  </div>
+</section>
+
+<section class="lp-section" style="padding-top:64px; padding-bottom:64px;">
+  <div class="grid2">
+    <div class="tile" style="display:flex; gap:18px; align-items:flex-start;"><i data-lucide="code-2" style="color:var(--success); flex-shrink:0;"></i><div><h3 style="margin:0 0 6px;">The code is Apache-2.0</h3><p>The site, tooling, and models are open source — free to use, adapt, and build on commercially.</p></div></div>
+    <div class="tile" style="display:flex; gap:18px; align-items:flex-start;"><i data-lucide="heart-handshake" style="color:var(--success); flex-shrink:0;"></i><div><h3 style="margin:0 0 6px;">The dataset is CC BY 4.0</h3><p>Every recording is contributed with explicit consent and shared openly, with credit to the community.</p></div></div>
+  </div>
+</section>
+
+<footer class="lp">
+  <div class="row">
+    <div>
+      <div style="font-weight:800; font-size:17px; margin-bottom:4px;">Lea Tongan Speech</div>
+      <div style="font-size:13px; color:var(--muted);">An open voice for the Tongan language · Code Apache-2.0 · Dataset CC BY 4.0</div>
+    </div>
+    <div style="display:flex; gap:24px; font-size:14px;">
+      <a href="contribute.html">Contribute</a>
+      <a href="https://github.com/iconza98/lea-tongan-speech" target="_blank" rel="noopener">Source</a>
+      <a href="https://www.tiktok.com/@ikani.samani/video/7661847744184683789" target="_blank" rel="noopener">TikTok</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>lucide.createIcons();</script>
 </body>
 </html>
