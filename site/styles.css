@@ -9,6 +9,15 @@
 }
 * { box-sizing:border-box; }
 body { margin:0; font:400 16px/1.5 var(--font); background:var(--background); color:var(--ink); -webkit-font-smoothing:antialiased; }
+
+/* Page-wide tapa (ngatu) texture — a fixed, tiled barkcloth layer behind all content,
+   matching the Lea Fakatonga design (designs/'landing page design'). Kept subtle; sits
+   below content (z-index:-1) and over the dark body background, so it reads in the page
+   margins/gaps while opaque cards stay clean. Applied via a .page-tapa element that only
+   the landing + contribute pages include (review.html intentionally omits it). */
+.page-tapa { position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background-image:url("assets/tapa-pattern.png"); background-size:640px; background-repeat:repeat; opacity:.06; }
+
 a { color:var(--secondary); text-decoration:none; }
 a:hover { color:#ffbf52; }
 ::selection { background:var(--primary); color:#fff; }
