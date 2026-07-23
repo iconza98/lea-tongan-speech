@@ -51,9 +51,12 @@ a:hover { color:#ffbf52; }
 h2 { font-size:18px; font-weight:700; margin:0 0 16px; }
 
 /* ===== Consent ===== */
-.check { display:flex; gap:12px; align-items:flex-start; margin:.7rem 0; cursor:pointer; line-height:1.5; }
-.check input { margin-top:4px; width:18px; height:18px; flex-shrink:0; accent-color:var(--primary); }
-.fine { font-size:13px; color:var(--muted); }
+.check { display:flex; gap:12px; align-items:flex-start; margin:.9rem 0; cursor:pointer; line-height:1.45; }
+.check input { margin-top:3px; width:18px; height:18px; flex-shrink:0; accent-color:var(--primary); }
+/* Secondary clause of a consent line — still inside the <label> (part of what is ticked),
+   but visually demoted so each row scans as one short bolded statement. */
+.check-sub { display:block; font-size:13px; color:var(--muted); line-height:1.5; margin-top:2px; }
+.fine { font-size:13px; color:var(--muted); border-top:1px solid var(--border); padding-top:12px; margin-top:18px; }
 
 /* ===== Studio ===== */
 .studio { transition:opacity .3s; }

@@ -36,19 +36,22 @@
          freely-shared Tongan speech tools. Please read the consent before you start.</p>
     </section>
 
-    <!-- Consent gate -->
+    <!-- Consent gate. The three confirmations and the plain "permanent, cannot be undone"
+         framing are required by ADR-0002 — change copy only in step with docs/CONSENT.md. -->
     <section class="card" id="consent-gate">
       <h2>Before you record</h2>
       <label class="check"><input type="checkbox" id="c-age" />
-        I am <strong>18 or older</strong> (or a parent/guardian consenting for someone under 18).</label>
+        <span>I am <strong>18 or older</strong>
+          <span class="check-sub">— or a parent/guardian consenting for someone under 18.</span></span></label>
       <label class="check"><input type="checkbox" id="c-voice" />
-        The voice I record is <strong>my own</strong> and I have the right to share it.</label>
+        <span>The voice I record is <strong>my own</strong>
+          <span class="check-sub">and I have the right to share it.</span></span></label>
       <label class="check"><input type="checkbox" id="c-license" />
-        I release my recording and its text under <strong>CC BY&nbsp;4.0</strong> — a public,
-        permanent, open licence that lets anyone (including commercial users) use it with credit,
-        and I understand <strong>this cannot be undone</strong> once published.</label>
-      <p class="fine">Read the full <a href="../docs/CONSENT.md" target="_blank" rel="noopener">consent &amp; licence terms</a>.
-         Do not say your name or personal details inside the recording.</p>
+        <span>I release my recording and its text under <strong>CC BY&nbsp;4.0</strong>
+          <span class="check-sub">A public, permanent, open licence — anyone, including commercial
+            users, may use it with credit. Once published, this cannot be undone.</span></span></label>
+      <p class="fine">Full <a href="../docs/CONSENT.md" target="_blank" rel="noopener">consent &amp; licence terms</a>
+         &nbsp;·&nbsp; Don't say your name or personal details in the recording.</p>
     </section>
 
     <!-- Recording studio (disabled until consent) -->
