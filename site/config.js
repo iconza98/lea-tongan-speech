@@ -11,8 +11,14 @@ window.LTS_CONFIG = {
   // Where the seed prompts come from (Tongan + English pairs to read).
   promptsUrl: "prompts.sample.json",
 
-  // Max recording length (seconds) — keeps clips short and storage sane.
-  maxRecordSeconds: 15,
+  // Max recording length (seconds). Prompts target 4–10s of speech (data/schema.md), so this is
+  // headroom above the longest expected read — NOT a target. Too low and long prompts get truncated.
+  maxRecordSeconds: 25,
+
+  // How many prompts make up one contribution session. ~25 × ~7s ≈ 3 minutes of speech, which
+  // matches the "Three minutes" promise on the landing page. Progress is shown against this,
+  // not against the whole corpus — "Phrase 1 of 1700" reads as endless.
+  sessionSize: 25,
 
   // Public Firebase config for read-only Firestore REST access (Dataset + Leaderboard tabs).
   // The API key is a browser key — public by design, not a secret.

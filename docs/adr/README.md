@@ -7,6 +7,7 @@ Recorded:
 - [`0001`](./0001-canonical-audio-format.md) — Canonical audio format (24 kHz mono FLAC).
 - [`0002`](./0002-consent-model.md) — Consent model (18+ open-license grant, versioned, forward-only).
 - [`0003`](./0003-region-strategy.md) — Region strategy (data in Sydney, functions in us-west1).
+- [`0005`](./0005-prompt-text-provenance.md) — Prompt text provenance (own-authored + public domain only).
 
 Planned:
 

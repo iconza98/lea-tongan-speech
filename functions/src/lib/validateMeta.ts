@@ -12,7 +12,11 @@ export interface ContributionMeta {
   transcript: string;
   english: string;
   speakerId: string;
-  demographics: { island: string | null; ageBand: string | null; gender: string | null };
+  /** `null` = the client did not send a demographics block at all, so leave the speaker's stored
+   *  answers untouched. An object = the client is stating the speaker's answers authoritatively;
+   *  a `null` *inside* it means "prefer not to say", which must CLEAR any stored value. Without
+   *  that distinction the "Prefer not to say" option cannot retract a previous answer. */
+  demographics: { island: string | null; ageBand: string | null; gender: string | null } | null;
   consent: {
     version: string;
     confirmedAge: boolean;
@@ -39,6 +43,7 @@ function optEnum(v: unknown, allowed: Set<string>, field: string): string | null
 export function validateMeta(raw: unknown): ContributionMeta {
   if (typeof raw !== "object" || raw === null) throw new ValidationError("meta must be an object");
   const m = raw as Record<string, unknown>;
+  const demoProvided = m.demographics !== undefined && m.demographics !== null;
   const demo = (m.demographics ?? {}) as Record<string, unknown>;
   const consent = m.consent as Record<string, unknown> | undefined;
   if (!consent) throw new ValidationError("missing consent");
@@ -53,11 +58,13 @@ export function validateMeta(raw: unknown): ContributionMeta {
     transcript: str(m.transcript, "transcript"),
     english: str(m.english, "english"),
     speakerId: str(m.speakerId, "speakerId"),
-    demographics: {
-      island: optEnum(demo.island, ISLANDS, "island"),
-      ageBand: optEnum(demo.ageBand, AGE_BANDS, "ageBand"),
-      gender: optEnum(demo.gender, GENDERS, "gender"),
-    },
+    demographics: demoProvided
+      ? {
+          island: optEnum(demo.island, ISLANDS, "island"),
+          ageBand: optEnum(demo.ageBand, AGE_BANDS, "ageBand"),
+          gender: optEnum(demo.gender, GENDERS, "gender"),
+        }
+      : null,
     consent: {
       version: str(consent.version, "consent.version"),
       confirmedAge: true,

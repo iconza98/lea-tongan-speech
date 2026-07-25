@@ -21,12 +21,14 @@ Three Firestore collections, plus operational ones.
 | Field | Type | Req | Notes |
 |---|---|---|---|
 | `promptId` | string | ✓ | Stable id. |
-| `tongan` | string | ✓ | The Tongan sentence to read. |
-| `english` | string | ✓ | English gloss (seeded from curated data / Azure MT; correctable). |
-| `source` | enum | ✓ | `curated` \| `azure-mt` \| `community` \| `manual` — provenance of the text. |
+| `tongan` | string | ✓ | The Tongan sentence to read. **Target 4–10 s when read aloud** (~10–18 words) — see *Utterance length* below. |
+| `english` | string | ✓ | English gloss. |
+| `textSource` | enum | ✓ | `authored` \| `community` \| `public-domain` \| `unverified` — provenance of the **Tongan**. Constrained by [`adr/0005`](../docs/adr/0005-prompt-text-provenance.md); MT is not a permitted value. `unverified` may be committed but never seeded. |
+| `glossSource` | enum | ✓ | `authored` \| `community` \| `public-domain` \| `azure-mt` — provenance of the **English**. `azure-mt` is allowed but means "not yet human-checked". |
+| `glossChecked` | boolean | | `true` once a fluent speaker has verified an MT-seeded gloss. |
 | `tags` | string[] | | Topic/domain (e.g. `greetings`, `numbers`, `everyday`). For coverage analysis. |
-| `targetRecordings` | number | | Coverage goal: how many distinct speakers we want for this prompt. |
-| `status` | enum | ✓ | `active` \| `retired`. |
+| `targetRecordings` | number | | Coverage goal: how many distinct speakers we want for this prompt. **Default 2** — see *Coverage* below. |
+| `status` | enum | ✓ | `active` \| `draft` \| `retired`. Only `active` prompts are seeded and served; `draft` = awaiting fluent-speaker verification. |
 | `createdAt` / `updatedAt` | timestamp | ✓ | |
 
 ### `speakers/{speakerId}` — a contributor (pseudonymous, no PII)
@@ -146,16 +148,79 @@ lea-tongan-speech-{version}/
 `metadata.jsonl` row:
 
 ```json
-{"clip_id":"...","file_name":"clips/....flac","tongan":"...","english":"...","speaker_id":"...","island":"...","age_band":"...","gender":"...","duration_ms":0,"sample_rate":24000}
+{"clip_id":"...","file_name":"clips/....flac","prompt_id":"...","tongan":"...","english":"...","speaker_id":"...","island":"...","age_band":"...","gender":"...","duration_ms":0,"sample_rate":24000}
 ```
 
 **Export never includes:** `authUid`, reviewer identities, raw `submissions/…` audio, `pending`/`rejected`
 clips, or any UCLA/NCEA data. `speaker_id` is the pseudonymous random id only.
 
+## Utterance length — prompts are sentences, not phrasebook entries
+
+**Target 4–10 seconds of speech per prompt (mean ~7 s, roughly 10–18 Tongan words).** Keep about
+15% short items so word-level lookups stay represented; the rest should be full sentences.
+
+This is a hard-won constraint, not a preference. The corpus feeds a TTS model that is asked at
+inference time to read **whole sentences** (`POST {text, speaker_audio, seed} → mp3`). A model
+trained on 2-second fragments has never seen a long sequence, produces list intonation, and degrades
+on exactly the input it exists to handle. The app repo's own research rejected two candidate corpora
+for precisely this: the UCLA archive for being *"word-list citation form"*, and the app's existing
+recordings for being *"short single-word clips, not continuous transcribed speech."*
+
+Note this is **not** about phoneme coverage. Tongan has 12 consonants, 5 vowels × 2 lengths, and
+strictly open (C)V syllables — only ~130 possible syllables, saturated by a few hundred sentences.
+Length is about **prosody**.
+
+Measured on the first 5 approved clips, this is not hypothetical:
+
+| Clip | Duration |
+|---|---|
+| `Fēfē hake?` | 1,620 ms |
+| `Mālō e lelei` | 1,740 ms |
+| `ʻOku ou sai pē, mālō` | 2,100 ms |
+| `ʻOku ou fie inu vai` | 2,580 ms |
+| `Taha, ua, tolu` | 2,640 ms |
+| **Total corpus** | **10.68 s** (mean 2.14 s) |
+
+**Clip length is irreversible; corpus size is not.** A 2-second clip never becomes a 7-second clip,
+but a small corpus becomes a large one by continuing to collect. Same reasoning as
+[`adr/0001`](../docs/adr/0001-canonical-audio-format.md).
+
+## Coverage — speaker-minutes, not prompt-fills
+
+Track progress as **total approved audio duration**, not clip count:
+
+| Milestone | Approved audio | ≈ clips @ 7 s |
+|---|---|---|
+| **M1** | 30 min | ~250 |
+| **M2** | 2 hrs | ~1,000 |
+| **M3** | 5 hrs | ~2,500 |
+
+`targetRecordings` defaults to **2**, not 10. Ten speakers reading the same sentence teaches a TTS
+model almost nothing past the second; the same contributor effort spent on ten *different* sentences
+is worth far more. Breadth belongs in the **text**, not in repetition.
+
+Multi-speaker breadth itself is correct and unchanged — many-speaker/shallow is a standard regime for
+teaching a zero-shot voice cloner a new language (LibriTTS: 2,456 speakers, ~4 min each). Speaker
+identity rides the model's conditioning pathway, so it need not be learned per-speaker.
+
 ## Seed prompts
 
-Prompts are seeded (not recorded) first, so contributors have something to read:
+Prompts are seeded (not recorded) first, so contributors have something to read. **Provenance is
+constrained by [`adr/0005`](../docs/adr/0005-prompt-text-provenance.md)** — read it before seeding.
 
-- Pull Tongan sentences + English glosses from the app's curated word/phrase data and Everyday Tongan
-  content; where English is missing, seed it via Azure MT and mark `source:azure-mt` for later human check.
-- See [`seed-prompts.example.jsonl`](./seed-prompts.example.jsonl) for the shape.
+Permitted sources for the **Tongan** text:
+
+- **Authored** by fluent speakers for this project (`textSource: authored`).
+- **Contributed** through the site under the CC BY 4.0 grant (`textSource: community`).
+- **Public domain** — e.g. the U.S. Peace Corps *Basic Tongan Language Lessons*
+  (`textSource: public-domain`). Needs the fluent-speaker typo pass documented in its attribution.
+
+**Not permitted as prompt text:** the app dictionary's `churchward` entries (in copyright) or
+`ncea-l1` entries (CC BY-NC), UCLA (CC BY-NC-SA), Shumway (© UH Press), or any machine-translated
+Tongan. Only the app's 403 `curated` entries are clean, and then as *vocabulary to write sentences
+from* — never as copied text. Prompt text is published permanently in every release, so this cannot
+be corrected after the fact.
+
+English glosses may be MT-seeded (`glossSource: azure-mt`, `glossChecked: false`) and corrected later.
+
+See [`seed-prompts.example.jsonl`](./seed-prompts.example.jsonl) for the shape.

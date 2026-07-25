@@ -1,9 +1,9 @@
 /**
  * Accept/transcode + moderation pipeline for the open Tongan speech corpus.
  *
- * ⚠️ UNTESTED SKELETON — written before the Firebase project exists. It compiles-shaped and follows
- *    the app's proven accept pattern, but has not been deployed or run. Stand up the project, set the
- *    bucket, `npm --prefix functions run typecheck`, then emulate before trusting it.
+ * DEPLOYED AND WORKING — all three functions have run in production (5 clips submitted, transcoded
+ *    and approved end to end). `submitContribution` and the transcode/probe stage are additionally
+ *    covered by an emulator run; see functions/README.md.
  *
  * Flow (data/schema.md + docs/adr/0001, 0002):
  *   site  ──POST multipart──▶  submitContribution  ──▶  submissions/{clipId}/source.<ext>
@@ -16,6 +16,13 @@ import { setGlobalOptions } from "firebase-functions/v2";
 import { onRequest, onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
+// FieldValue comes from the modular entry point rather than `admin.firestore.FieldValue`, which
+// works in production but is `undefined` under the FUNCTIONS EMULATOR — firebase-tools wraps
+// `firebase-admin` to redirect it at the local emulators, and the statics hanging off
+// `admin.firestore` don't survive that wrapper. `admin.firestore()` still works either way.
+// Without this import the whole file is untestable locally: every write throws in the emulator
+// while behaving perfectly once deployed.
+import { FieldValue } from "firebase-admin/firestore";
 import { randomUUID } from "crypto";
 import { tmpdir } from "os";
 import { join } from "path";
@@ -64,7 +71,7 @@ export const submitContribution = onRequest(
       const sourcePath = `submissions/${clipId}/source.${ext}`;
       await bucket.file(sourcePath).save(audio, { contentType: mime, resumable: false });
 
-      const now = admin.firestore.FieldValue.serverTimestamp();
+      const now = FieldValue.serverTimestamp();
       await db.collection("clips").doc(clipId).set({
         clipId,
         promptId: meta.promptId,
@@ -78,16 +85,43 @@ export const submitContribution = onRequest(
         createdAt: now,
         updatedAt: now,
       });
-      await db.collection("speakers").doc(meta.speakerId).set(
-        {
-          speakerId: meta.speakerId,
-          demographics: meta.demographics,
-          consentVersion: meta.consent.version,
-          clipCount: admin.firestore.FieldValue.increment(1),
-          updatedAt: now,
-        },
-        { merge: true }
-      );
+      // Demographics describe the speaker, not the clip, so a submission that omits them must not
+      // disturb what the speaker already told us — a 25-clip session used to blank them by clip 2.
+      // But when the client DOES send the block it is authoritative: a null means "prefer not to
+      // say" and has to delete any stored value, otherwise that option cannot retract an answer.
+      const demographics: Record<string, string | FirebaseFirestore.FieldValue> = {};
+      if (meta.demographics) {
+        for (const [k, v] of Object.entries(meta.demographics)) {
+          demographics[k] = v === null || v === undefined ? FieldValue.delete() : v;
+        }
+      }
+
+      // BEST-EFFORT, deliberately. The clip and its audio are already durable by this point, so a
+      // transaction failure here must not fail the request: the client would show "Upload failed —
+      // try again", the contributor would re-record, and the same take would land twice under two
+      // clipIds. The speaker doc is derived data (clipId already carries speakerId), so a stale
+      // clipCount is a far cheaper loss than a duplicate in a permanent corpus.
+      const speakerRef = db.collection("speakers").doc(meta.speakerId);
+      try {
+        await db.runTransaction(async (tx) => {
+          const snap = await tx.get(speakerRef);
+          tx.set(
+            speakerRef,
+            {
+              speakerId: meta.speakerId,
+              ...(Object.keys(demographics).length ? { demographics } : {}),
+              consentVersion: meta.consent.version,
+              clipCount: FieldValue.increment(1),
+              // Set once, on the speaker's first contribution (data/schema.md requires it).
+              ...(snap.exists ? {} : { createdAt: now }),
+              updatedAt: now,
+            },
+            { merge: true }
+          );
+        });
+      } catch (err) {
+        logger.error("speaker upsert failed; clip was accepted", { clipId, speakerId: meta.speakerId, err });
+      }
 
       res.status(200).json({ clipId });
     } catch (err) {
@@ -137,8 +171,8 @@ export const acceptClip = onCall(
         "audio.codec": "flac",
         "audio.bytes": bytes,
         "review.reviewerId": request.auth?.token?.email ?? null,
-        "review.reviewedAt": admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        "review.reviewedAt": FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
       return { ok: true, clipId, durationMs };
     } finally {
@@ -157,9 +191,9 @@ export const rejectClip = onCall(
     await db.collection("clips").doc(clipId).update({
       status: "rejected",
       "review.reviewerId": request.auth?.token?.email ?? null,
-      "review.reviewedAt": admin.firestore.FieldValue.serverTimestamp(),
+      "review.reviewedAt": FieldValue.serverTimestamp(),
       "review.notes": request.data?.notes ?? null,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
     return { ok: true, clipId };
   }
