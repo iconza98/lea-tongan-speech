@@ -170,6 +170,17 @@ Note this is **not** about phoneme coverage. Tongan has 12 consonants, 5 vowels 
 strictly open (C)V syllables — only ~130 possible syllables, saturated by a few hundred sentences.
 Length is about **prosody**.
 
+Measured on the first 5 approved clips, this is not hypothetical:
+
+| Clip | Duration |
+|---|---|
+| `Fēfē hake?` | 1,620 ms |
+| `Mālō e lelei` | 1,740 ms |
+| `ʻOku ou sai pē, mālō` | 2,100 ms |
+| `ʻOku ou fie inu vai` | 2,580 ms |
+| `Taha, ua, tolu` | 2,640 ms |
+| **Total corpus** | **10.68 s** (mean 2.14 s) |
+
 **Clip length is irreversible; corpus size is not.** A 2-second clip never becomes a 7-second clip,
 but a small corpus becomes a large one by continuing to collect. Same reasoning as
 [`adr/0001`](../docs/adr/0001-canonical-audio-format.md).

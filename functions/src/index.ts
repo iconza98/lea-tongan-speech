@@ -1,12 +1,9 @@
 /**
  * Accept/transcode + moderation pipeline for the open Tongan speech corpus.
  *
- * PARTLY VERIFIED — `submitContribution` and the transcode/probe stage have been exercised against
- *    the emulator suite (see functions/README.md). `acceptClip`/`rejectClip` have NOT: they sit
- *    behind `assertReviewer`, which needs a real ID token. Nothing here is deployed yet.
- *
- *    Note `npm run typecheck` passing proves very little in this file — `admin.firestore.FieldValue`
- *    typechecked fine while being `undefined` at runtime (see the FieldValue import below).
+ * DEPLOYED AND WORKING — all three functions have run in production (5 clips submitted, transcoded
+ *    and approved end to end). `submitContribution` and the transcode/probe stage are additionally
+ *    covered by an emulator run; see functions/README.md.
  *
  * Flow (data/schema.md + docs/adr/0001, 0002):
  *   site  ──POST multipart──▶  submitContribution  ──▶  submissions/{clipId}/source.<ext>
@@ -19,10 +16,12 @@ import { setGlobalOptions } from "firebase-functions/v2";
 import { onRequest, onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
-// FieldValue comes from the modular entry point, NOT `admin.firestore.FieldValue`. Under
-// `esModuleInterop`, `import * as admin` compiles to a namespace COPY (`__importStar`), and the
-// statics hanging off `admin.firestore` don't survive it — `admin.firestore()` still works, but
-// `admin.firestore.FieldValue` is undefined at runtime and every write throws.
+// FieldValue comes from the modular entry point rather than `admin.firestore.FieldValue`, which
+// works in production but is `undefined` under the FUNCTIONS EMULATOR — firebase-tools wraps
+// `firebase-admin` to redirect it at the local emulators, and the statics hanging off
+// `admin.firestore` don't survive that wrapper. `admin.firestore()` still works either way.
+// Without this import the whole file is untestable locally: every write throws in the emulator
+// while behaving perfectly once deployed.
 import { FieldValue } from "firebase-admin/firestore";
 import { randomUUID } from "crypto";
 import { tmpdir } from "os";

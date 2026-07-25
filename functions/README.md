@@ -3,16 +3,17 @@
 Accept/transcode + moderation pipeline (Cloud Functions, TypeScript, Node 22) for the open corpus.
 Own Firebase project, isolated from the app.
 
-> **Partly verified (2026-07-25).** `submitContribution` and the transcode/probe stage have now been
-> run against the Firebase emulator suite (`functions,firestore,storage`) — see *Verified so far*
-> below. Still **not deployed**, and the two reviewer callables remain unexercised.
+> **Deployed and working (2026-07-25).** The "untested skeleton" warning that used to sit here is
+> obsolete: all three functions have run in production — 5 clips submitted, transcoded to 24 kHz mono
+> FLAC, and approved through `review.html` by a real reviewer.
 >
-> That emulator run caught a bug the "untested" label had been hiding: **every Firestore write threw
-> at runtime.** `admin.firestore.FieldValue` is `undefined` under `esModuleInterop`, because
-> `import * as admin` compiles to a namespace copy (`__importStar`) that loses the statics attached
-> to `admin.firestore`. Typecheck passes regardless — TS sees the types, not the runtime shape.
-> Fixed by importing `FieldValue` from `firebase-admin/firestore`. Treat "it compiles" as no evidence
-> at all for this file.
+> **These functions are now locally testable too.** They previously were not: under the *functions
+> emulator* every Firestore write threw `Cannot read properties of undefined (reading
+> 'serverTimestamp')`. firebase-tools wraps `firebase-admin` to point it at the local emulators, and
+> the statics hanging off `admin.firestore` don't survive that wrapper — so `admin.firestore.FieldValue`
+> is `undefined` in the emulator while working fine when deployed. Importing `FieldValue` from
+> `firebase-admin/firestore` works in both. If you see that error in any other Firebase repo, this is
+> why.
 
 ## Functions
 
@@ -41,10 +42,14 @@ src/lib/transcode.ts    ffmpeg-static → FLAC; ffprobe-static → duration
 5. Deploy: `firebase deploy --only functions,hosting,firestore:rules,storage:rules`.
 6. Point the site at it: `site/config.js` → `submitEndpoint: "/api/submit"`.
 
-## Verified so far
+## Verified
 
-Run with `firebase emulators:start --only functions,firestore,storage --project demo-lts`
-(needs **JDK 21+** — firebase-tools rejects older Java).
+**In production** — `submitContribution`, `acceptClip` and `rejectClip` have all run against the
+live project. The 5 approved clips carry `audio.path`, `audio.durationMs`, `sampleRate: 24000`,
+`codec: flac` and `review.reviewedAt`, so the full submit → transcode → approve → publish path works.
+
+**Locally**, with `firebase emulators:start --only functions,firestore,storage --project demo-lts`
+(needs **JDK 21+** — firebase-tools rejects older Java):
 
 - ✅ `submitContribution` — multipart parse, consent validation, raw upload to
   `submissions/{clipId}/source.webm`, `clips/{clipId}` created as `pending`.
@@ -57,10 +62,9 @@ Run with `firebase emulators:start --only functions,firestore,storage --project 
 
 ## Known TODOs / caveats
 
-- **`acceptClip` / `rejectClip` are still unexercised** — both are `onCall` behind `assertReviewer`,
-  which needs a real Firebase ID token. The transcode stage they depend on is verified separately
-  (above), but the callables themselves, the reviewer gate, and the `corpus/` write are not.
-- **Not deployed** — everything above is emulator-only.
+- **`acceptClip` / `rejectClip` have no *local* coverage.** Both are `onCall` behind
+  `assertReviewer`, so exercising them in the emulator needs the Auth emulator to mint a reviewer
+  token. They are proven in production, but a regression would not be caught before deploy.
 - **Bucket name** is the project default; set explicitly for the isolated open-corpus bucket.
 - **Rate limiting / abuse**: `submitContribution` is public. Add App Check / a rate limit before launch.
 - **Source retention**: rejected clips keep their `submissions/` source; add a cleanup policy.
