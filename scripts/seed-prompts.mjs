@@ -5,6 +5,10 @@
  * Auth: uses your gcloud owner credentials (`gcloud auth print-access-token`), which bypass the
  * deny-all client security rules — writes go in as admin. No service-account key needed.
  *
+ * Refuses to run unless scripts/check-prompts.mjs passes, and seeds ONLY `status: "active"` rows.
+ * Prompt text is published permanently and cannot be recalled (docs/CONSENT.md), so provenance is
+ * gated here rather than caught in review — see docs/adr/0005-prompt-text-provenance.md.
+ *
  * Usage:
  *   node scripts/seed-prompts.mjs [path-to.jsonl]     # default: data/seed-prompts.example.jsonl
  */
@@ -31,7 +35,20 @@ function toFields(obj) {
   return fields;
 }
 
-const rows = readFileSync(FILE, "utf8").split("\n").map((l) => l.trim()).filter(Boolean).map((l) => JSON.parse(l));
+// Provenance gate (ADR-0005). Non-zero exit here aborts the seed — writes are unrecallable.
+try {
+  execSync(`node scripts/check-prompts.mjs ${JSON.stringify(FILE)}`, { stdio: "inherit" });
+} catch {
+  console.error("\nAborted: prompt provenance check failed. Nothing was written.");
+  process.exit(1);
+}
+
+const all = readFileSync(FILE, "utf8").split("\n").map((l) => l.trim()).filter(Boolean).map((l) => JSON.parse(l));
+// Only `active` prompts reach contributors. `draft` = awaiting fluent-speaker verification.
+const rows = all.filter((p) => p.status === "active");
+const skipped = all.length - rows.length;
+if (skipped) console.log(`Skipping ${skipped} non-active prompt(s) (draft/retired).`);
+
 const bearer = token();
 let ok = 0;
 

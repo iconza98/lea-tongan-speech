@@ -11,15 +11,22 @@ Corpus schema + eval gold-set fetch scripts. **No audio is committed here** (see
   is published permanently in every release, so it cannot be corrected after the fact.
 
 > **`seed-prompts.example.jsonl` shows the *shape*, not the target.** Its rows use only attested
-> text, so they are all well under the 4–10 s utterance target in [`schema.md`](./schema.md) — the
-> longest attested public-domain Tongan sentence available to us is 9 words. Real seed prompts have
-> to be **authored by fluent speakers**; no existing clean source reaches the target length.
+> text, so they are all well under the 4–10 s utterance target in [`schema.md`](./schema.md). Real
+> seed prompts have to be **authored by fluent speakers**: the phrasebook and vocabulary sources
+> available to this project top out at single words and short turns, so none of them reach the
+> target length.
 >
-> Two known follow-ups in that file: `every-001` carried an ambiguous `source: azure-mt` under the
-> old single-field schema, so it is unclear whether the *Tongan* or only the *English* was
-> machine-generated — a fluent speaker must confirm before it is seeded for real. And the two
-> `pc-*` rows need the fluent-speaker typo pass documented in the Peace Corps attribution.
-- `fetch-goldsets.*` — download scripts for UCLA/NCEA **eval** data into a git-ignored local path.
-  This data is CC BY-NC / BY-NC-SA: **evaluation only, never training, never redistributed.**
+> Rows carrying `status: "draft"` are **not seeded and not served** — `scripts/seed-prompts.mjs`
+> skips them. They are waiting on a fluent speaker:
+>
+> - `every-001` is `textSource: "unverified"`. Under the old single-field schema it was
+>   `source: "azure-mt"`, which left it ambiguous whether the *Tongan* or only the *English* was
+>   machine-generated. It cannot be promoted to `active` until that is resolved. **Note it is
+>   already live and already has an approved clip recorded against it**, from before this rule
+>   existed — resolving its provenance is outstanding work, not a hypothetical.
+> - The `pc-*` rows are public-domain Peace Corps text. The two documented orthographic fixes
+>   (`ʻlo` → `ʻIo`, `siʻiisiʻi` → `siʻisiʻi`) are already applied, but the full fluent-speaker pass
+>   over the source has not been done, so they stay `draft`.
 
-Published corpus audio lives in the Storage bucket and the Hugging Face Dataset mirror.
+Run `node scripts/check-prompts.mjs` before seeding anything — `seed-prompts.mjs` runs it too and
+refuses to write if it fails.

@@ -33,14 +33,20 @@ src/lib/validateMeta.ts consent + field validation (→ data/schema.md, ADR-0002
 src/lib/transcode.ts    ffmpeg-static → FLAC; ffprobe-static → duration
 ```
 
-## Before it can run (needs the Firebase project)
+## Working on these functions
 
-1. Create the isolated Firebase project; copy `.firebaserc.example` → `.firebaserc` with its id.
-2. Set the open-corpus bucket in `src/index.ts` (`admin.storage().bucket(<name>)`) if not the default.
-3. Seed `adminConfig/reviewers` `{ emails: [...] }`.
-4. `npm install && npm run typecheck`, then `npm run serve` (emulators) to exercise the flow.
-5. Deploy: `firebase deploy --only functions,hosting,firestore:rules,storage:rules`.
-6. Point the site at it: `site/config.js` → `submitEndpoint: "/api/submit"`.
+The project, bucket, reviewer allowlist and site wiring are all already in place — this section is
+about changing the code, not standing it up.
+
+```bash
+npm install && npm run typecheck
+npm run serve      # build + emulators (functions, firestore, storage) — needs JDK 21+
+firebase deploy --only functions,hosting,firestore:rules,storage:rules
+```
+
+`npm run serve` starts Firestore and Storage emulators alongside functions. **Do not run the
+functions emulator alone** — it would leave the emulated functions reading and writing the *live*
+Firestore and the real corpus bucket.
 
 ## Verified
 
@@ -48,15 +54,18 @@ src/lib/transcode.ts    ffmpeg-static → FLAC; ffprobe-static → duration
 live project. The 5 approved clips carry `audio.path`, `audio.durationMs`, `sampleRate: 24000`,
 `codec: flac` and `review.reviewedAt`, so the full submit → transcode → approve → publish path works.
 
-**Locally**, with `firebase emulators:start --only functions,firestore,storage --project demo-lts`
-(needs **JDK 21+** — firebase-tools rejects older Java):
+**Locally, once (2026-07-25)** via `npm run serve` — a manual run, not an automated suite, so
+treat it as a changelog entry rather than a guarantee any future change re-checks:
 
 - ✅ `submitContribution` — multipart parse, consent validation, raw upload to
   `submissions/{clipId}/source.webm`, `clips/{clipId}` created as `pending`.
-- ✅ **Speaker demographics survive a multi-clip session.** Submissions 2+ carry
-  `{island:null, ageBand:null, gender:null}`; nulls are stripped before the merge so they no longer
-  overwrite the answers given on clip 1. `clipCount` increments correctly; `createdAt` is stamped
-  once, on first contribution.
+- ✅ **Speaker demographics survive a multi-clip session.** A submission that omits the
+  `demographics` block leaves the speaker's stored answers untouched, so a 25-clip session no
+  longer blanks them at clip 2. When the block *is* sent it is authoritative: a `null` means
+  "prefer not to say" and deletes the stored value, so that option can actually retract an answer.
+  `clipCount` increments correctly; `createdAt` is stamped once, on first contribution.
+- ✅ **The speaker write is best-effort.** It runs after the clip is durable, so a transaction
+  failure logs and still returns 200 rather than prompting a re-record that would duplicate the take.
 - ✅ **Transcode/probe** — a 9 s Opus/WebM take → `flac / 24000 Hz / 1 ch / 16-bit` and
   `durationMs: 9000`, matching [ADR-0001](../docs/adr/0001-canonical-audio-format.md).
 

@@ -5,9 +5,10 @@ mission-driven intro that funnels visitors into the contribute tool (`contribute
 hosts three surfaces:
 
 - **Contribute** — record → consent ([`../docs/CONSENT.md`](../docs/CONSENT.md)) → grant CC BY 4.0 →
-  submit. **Built** (front-end). Currently runs in **stub mode**: it captures audio, gates on the
-  three consent boxes, assembles the clip payload (matching [`../data/schema.md`](../data/schema.md)),
-  and — with no backend configured — logs the payload instead of uploading.
+  submit. **Live.** Uploads to the `submitContribution` Cloud Function via the `/api/submit` hosting
+  rewrite; clips land as `pending` for review. Contributors work in **sessions** of `sessionSize`
+  prompts so progress reads as finishable rather than against the whole corpus. Setting
+  `submitEndpoint: null` in `config.js` forces the old stub mode (payload logged, nothing uploaded).
 - **Dataset** — browse/download the published CC BY 4.0 corpus. *Stub (needs the export + backend).*
 - **Leaderboard** — model scorecards from `eval/`. *Stub (needs models).*
 
@@ -22,7 +23,9 @@ A separate **Reviewer** page (`review.html`) lets allowlisted reviewers approve/
 | `review.html` | reviewer sign-in + moderation queue (`review.js`) |
 | `styles.css` | styling (Lea Fakatonga brand — shared by all pages) |
 | `app.js` | recorder (MediaRecorder), consent gate, demographics, submit |
-| `config.js` | **public** runtime config — `submitEndpoint` (null = stub), `consentVersion`, prompts URL, max length |
+| `config.js` | **public** runtime config — `submitEndpoint` (null = stub), `consentVersion`, prompts URL, `maxRecordSeconds`, `sessionSize` |
+| `session.js` | pure session arithmetic (which screen, progress label) — no DOM, so it is testable |
+| `test-session.mjs` | `node site/test-session.mjs` — dependency-free tests for `session.js`, run in CI |
 | `prompts.sample.json` | seed prompts to read (Tongan + English) |
 
 ## Run locally
@@ -33,11 +36,22 @@ MediaRecorder + `fetch` need a real origin, so serve over http (not `file://`):
 cd site && python3 -m http.server 8000    # then open http://localhost:8000
 ```
 
-Grant microphone access. In stub mode, open the console to see the assembled payload after "Submit".
+Grant microphone access. Served this way the page has no backend, so set `submitEndpoint: null` to
+exercise the flow in stub mode and watch the assembled payload in the console.
 
-## Wiring the backend (once the Firebase project exists)
+```bash
+node site/test-session.mjs      # session logic (no browser, no dependencies)
+```
 
-Set `config.js` → `submitEndpoint` to the accept Cloud Function URL. The site POSTs
-`multipart/form-data` with `meta` (JSON, per the corpus schema) + `audio` (the recording). The
-function transcodes to canonical 24 kHz mono FLAC ([`../docs/adr/0001`](../docs/adr/0001-canonical-audio-format.md)),
-writes a `pending` clip doc, and routes it to the reviewer moderation gate.
+## How a submission travels
+
+The site POSTs `multipart/form-data` with `meta` (JSON, per [`../data/schema.md`](../data/schema.md))
++ `audio` to `/api/submit`, which `firebase.json` rewrites to the `submitContribution` function. That
+stores the raw upload, writes a `pending` clip doc, and routes it to the reviewer gate
+(`review.html`); approval transcodes to canonical 24 kHz mono FLAC
+([`../docs/adr/0001`](../docs/adr/0001-canonical-audio-format.md)).
+
+> **`prompts.sample.json` is published to real contributors** — this page auto-deploys to production
+> on merge to `main`. Anything added here is read aloud and recorded into a permanent CC BY 4.0
+> dataset, so prompt text must clear [`../docs/adr/0005`](../docs/adr/0005-prompt-text-provenance.md)
+> first (`node scripts/check-prompts.mjs`).

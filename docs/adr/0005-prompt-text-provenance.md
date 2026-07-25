@@ -2,6 +2,9 @@
 
 - **Status:** Accepted
 - **Date:** 2026-07-25
+- **Related:** [`0002`](./0002-consent-model.md) (permanence of a release), [`../CONSENT.md`](../CONSENT.md), corpus schema [`../../data/schema.md`](../../data/schema.md), [`../../CONTRIBUTING.md`](../../CONTRIBUTING.md) rule 4
+- **Numbering:** `0004` (multi-speaker dataset) is still unwritten; this decision was forced by a
+  concrete seeding hazard and is recorded now rather than held back to fill the gap in order.
 
 ## Context
 
@@ -35,8 +38,13 @@ acted on at scale.
 
 1. **Own-authored** — sentences written for this project by fluent speakers, or contributed through
    the site under the CC BY 4.0 grant.
-2. **Public domain** — e.g. the U.S. Peace Corps *Basic Tongan Language Lessons*
-   (17 U.S.C. §105; see `peacecorps-tongan/ATTRIBUTION.md` in the app repo).
+2. **Public domain** — e.g. the U.S. Peace Corps *Basic Tongan Language Lessons* (Lavakeiʻaho, Lose;
+   U.S. Peace Corps Tonga Training Unit, 2009), which is a U.S. Government work and therefore not
+   subject to copyright under **17 U.S.C. §105**. Source PDF:
+   <https://files.peacecorps.gov/multimedia/audio/languagelessons/tonga/TN_Tonga_Language_Lessons.pdf>.
+   The derivation and its known orthographic errors are documented in the Lea Fakatonga app repo at
+   `docs/research/peacecorps-tongan/ATTRIBUTION.md`; that file is **not reachable from this repo**,
+   so the licence basis is restated here rather than only referenced.
 
 Everything else is **reference-only** and must never become prompt text: Churchward (in copyright),
 NCEA (CC BY-NC), UCLA (CC BY-NC-SA), Shumway (© UH Press).
@@ -62,8 +70,12 @@ either way; if a licence is later obtained, amend this ADR rather than working a
 **Positive**
 - The published dataset stays cleanly CC BY 4.0, so the models trained on it stay commercially
   usable — the same reasoning that keeps UCLA/NCEA out of training data.
-- The constraint is enforceable in code: prompts carry `textSource`, and a seeding check can reject
-  disallowed values before anything reaches a release.
+- **The constraint is enforced in code**, not merely written down. `scripts/check-prompts.mjs`
+  rejects reference-only sources (`churchward`, `ncea-l1`, `ucla`, `shumway`, any MT) and refuses to
+  let a prompt be `active` without verified provenance. `scripts/seed-prompts.mjs` runs it first and
+  aborts rather than write, and `.github/workflows/validate.yml` runs it on every PR. A prompt whose
+  provenance is unresolved is marked `textSource: unverified` / `status: draft` — committable and
+  discussable, but never seeded and never served.
 - Removes an ambiguity that was about to be acted on at scale.
 
 **Negative / trade-offs accepted**

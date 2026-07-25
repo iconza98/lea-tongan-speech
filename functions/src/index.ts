@@ -85,32 +85,43 @@ export const submitContribution = onRequest(
         createdAt: now,
         updatedAt: now,
       });
-      // Only write demographics the contributor actually answered. Every submission carries the
-      // full {island, ageBand, gender} shape with nulls for "prefer not to say", and a merge writes
-      // those nulls over whatever the speaker already told us — so a 25-clip session used to end
-      // with the demographics blanked by clip 2. Absent > null here.
-      const demographics: Record<string, string> = {};
-      for (const [k, v] of Object.entries(meta.demographics)) {
-        if (v !== null && v !== undefined) demographics[k] = v;
+      // Demographics describe the speaker, not the clip, so a submission that omits them must not
+      // disturb what the speaker already told us — a 25-clip session used to blank them by clip 2.
+      // But when the client DOES send the block it is authoritative: a null means "prefer not to
+      // say" and has to delete any stored value, otherwise that option cannot retract an answer.
+      const demographics: Record<string, string | FirebaseFirestore.FieldValue> = {};
+      if (meta.demographics) {
+        for (const [k, v] of Object.entries(meta.demographics)) {
+          demographics[k] = v === null || v === undefined ? FieldValue.delete() : v;
+        }
       }
 
+      // BEST-EFFORT, deliberately. The clip and its audio are already durable by this point, so a
+      // transaction failure here must not fail the request: the client would show "Upload failed —
+      // try again", the contributor would re-record, and the same take would land twice under two
+      // clipIds. The speaker doc is derived data (clipId already carries speakerId), so a stale
+      // clipCount is a far cheaper loss than a duplicate in a permanent corpus.
       const speakerRef = db.collection("speakers").doc(meta.speakerId);
-      await db.runTransaction(async (tx) => {
-        const snap = await tx.get(speakerRef);
-        tx.set(
-          speakerRef,
-          {
-            speakerId: meta.speakerId,
-            ...(Object.keys(demographics).length ? { demographics } : {}),
-            consentVersion: meta.consent.version,
-            clipCount: FieldValue.increment(1),
-            // Set once, on the speaker's first contribution (data/schema.md requires it).
-            ...(snap.exists ? {} : { createdAt: now }),
-            updatedAt: now,
-          },
-          { merge: true }
-        );
-      });
+      try {
+        await db.runTransaction(async (tx) => {
+          const snap = await tx.get(speakerRef);
+          tx.set(
+            speakerRef,
+            {
+              speakerId: meta.speakerId,
+              ...(Object.keys(demographics).length ? { demographics } : {}),
+              consentVersion: meta.consent.version,
+              clipCount: FieldValue.increment(1),
+              // Set once, on the speaker's first contribution (data/schema.md requires it).
+              ...(snap.exists ? {} : { createdAt: now }),
+              updatedAt: now,
+            },
+            { merge: true }
+          );
+        });
+      } catch (err) {
+        logger.error("speaker upsert failed; clip was accepted", { clipId, speakerId: meta.speakerId, err });
+      }
 
       res.status(200).json({ clipId });
     } catch (err) {

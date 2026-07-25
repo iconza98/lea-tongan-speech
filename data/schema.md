@@ -23,12 +23,12 @@ Three Firestore collections, plus operational ones.
 | `promptId` | string | ✓ | Stable id. |
 | `tongan` | string | ✓ | The Tongan sentence to read. **Target 4–10 s when read aloud** (~10–18 words) — see *Utterance length* below. |
 | `english` | string | ✓ | English gloss. |
-| `textSource` | enum | ✓ | `authored` \| `community` \| `public-domain` — provenance of the **Tongan**. Constrained by [`adr/0005`](../docs/adr/0005-prompt-text-provenance.md); MT is not a permitted value. |
+| `textSource` | enum | ✓ | `authored` \| `community` \| `public-domain` \| `unverified` — provenance of the **Tongan**. Constrained by [`adr/0005`](../docs/adr/0005-prompt-text-provenance.md); MT is not a permitted value. `unverified` may be committed but never seeded. |
 | `glossSource` | enum | ✓ | `authored` \| `community` \| `public-domain` \| `azure-mt` — provenance of the **English**. `azure-mt` is allowed but means "not yet human-checked". |
 | `glossChecked` | boolean | | `true` once a fluent speaker has verified an MT-seeded gloss. |
 | `tags` | string[] | | Topic/domain (e.g. `greetings`, `numbers`, `everyday`). For coverage analysis. |
 | `targetRecordings` | number | | Coverage goal: how many distinct speakers we want for this prompt. **Default 2** — see *Coverage* below. |
-| `status` | enum | ✓ | `active` \| `retired`. |
+| `status` | enum | ✓ | `active` \| `draft` \| `retired`. Only `active` prompts are seeded and served; `draft` = awaiting fluent-speaker verification. |
 | `createdAt` / `updatedAt` | timestamp | ✓ | |
 
 ### `speakers/{speakerId}` — a contributor (pseudonymous, no PII)
@@ -148,7 +148,7 @@ lea-tongan-speech-{version}/
 `metadata.jsonl` row:
 
 ```json
-{"clip_id":"...","file_name":"clips/....flac","tongan":"...","english":"...","speaker_id":"...","island":"...","age_band":"...","gender":"...","duration_ms":0,"sample_rate":24000}
+{"clip_id":"...","file_name":"clips/....flac","prompt_id":"...","tongan":"...","english":"...","speaker_id":"...","island":"...","age_band":"...","gender":"...","duration_ms":0,"sample_rate":24000}
 ```
 
 **Export never includes:** `authUid`, reviewer identities, raw `submissions/…` audio, `pending`/`rejected`

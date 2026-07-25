@@ -79,6 +79,10 @@ for (const c of clips) {
   const demo = (spk && spk.demographics) || {};
   meta.push({
     clip_id: c.clipId, file_name: `clips/${c.clipId}.flac`,
+    // prompt_id makes published rows traceable back to their source text. Releases are permanent
+    // (docs/CONSENT.md), so if a prompt's provenance is ever found to be wrong, this is the only
+    // way to scope which published rows are affected — see docs/adr/0005.
+    prompt_id: c.promptId ?? null,
     tongan: c.transcript, english: c.english, speaker_id: c.speakerId,
     island: demo.island ?? null, age_band: demo.ageBand ?? null, gender: demo.gender ?? null,
     duration_ms: c.audio.durationMs ?? null, sample_rate: c.audio.sampleRate ?? 24000,

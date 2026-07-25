@@ -1,0 +1,36 @@
+name: validate
+
+# Enforces the constraints that cannot be walked back once data is published:
+#  - prompt-text provenance (docs/adr/0005) — prompt text ships in every CC BY 4.0 release
+#    and per docs/CONSENT.md a release can never be recalled
+#  - the session logic behind the contribute tool, which auto-deploys to production on merge
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Prompt provenance (ADR-0005)
+        run: node scripts/check-prompts.mjs
+      - name: Contribute-session logic
+        run: node site/test-session.mjs
+
+  functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci --prefix functions
+      - run: npm run typecheck --prefix functions

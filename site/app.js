@@ -1,5 +1,8 @@
-/* Contribute site — front-end only. The accept/transcode pipeline (Cloud Function) is stubbed;
-   set LTS_CONFIG.submitEndpoint once the Firebase project exists. Vanilla JS, no deps. */
+/* Contribute site front-end. Live: submissions POST to LTS_CONFIG.submitEndpoint (/api/submit →
+   the submitContribution Cloud Function); set it to null to fall back to stub mode. Vanilla JS,
+   no deps, no build step. Session arithmetic lives in session.js so it can be tested without a DOM.
+
+   This page auto-deploys to production on merge to main (.github/workflows/deploy-hosting.yml). */
 (() => {
   "use strict";
   const cfg = window.LTS_CONFIG || {};
@@ -86,8 +89,10 @@
   const state = {
     prompts: [],
     idx: 0,
-    // Seconds of audio recorded in this session — drives the "minutes contributed" readout.
-    // The authoritative duration is measured server-side by ffprobe at accept time.
+    // Seconds of audio submitted since this page loaded — drives the "minutes contributed"
+    // readout. Cumulative across sessions on purpose: a contributor who keeps going should see
+    // their running total, not a figure that resets. The authoritative per-clip duration is
+    // measured server-side by ffprobe at accept time; this is display only.
     sessionSeconds: 0,
     // idx at which the session-complete screen was last shown (see renderPrompt)
     shownDoneAt: -1,
@@ -139,58 +144,63 @@
   async function loadPrompts() {
     try {
       const res = await fetch(cfg.promptsUrl || "prompts.sample.json");
-      state.prompts = shuffle(await res.json());
-    } catch {
+      // Without these checks a 404 page or a shape change (e.g. {prompts:[...]}) yields a non-array
+      // that shuffle() passes through untouched, and the contributor is shown "that's every phrase"
+      // — a deploy failure presented as successful completion.
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const json = await res.json();
+      if (!Array.isArray(json) || !json.length) throw new Error("prompts payload is not a non-empty array");
+      state.prompts = shuffle(json);
+    } catch (err) {
+      console.error("[prompts] falling back:", err);
       state.prompts = [{ promptId: "fallback-001", tongan: "Mālō e lelei", english: "Hello", tags: [] }];
     }
     renderPrompt();
   }
 
-  /** Position within the current session (0-based), and how long a session actually is — the
-   *  final session is short if the corpus runs out. */
-  const sessionPos = () => state.idx % SESSION_SIZE;
-  const sessionStart = () => state.idx - sessionPos();
-  const sessionLen = () => Math.min(SESSION_SIZE, state.prompts.length - sessionStart());
-
+  /** Show the studio, or the session-complete screen. The `hidden` attribute alone is not enough:
+   *  styles.css carries `[hidden]{display:none !important}` so it actually beats the author-origin
+   *  `display:flex` on several of these blocks. */
   function showStudio(show) {
     $("session-done").hidden = show;
+    $("demographics").hidden = !show;
     for (const id of ["prompt-block", "recorder-block", "actions-block"]) $(id).hidden = !show;
   }
 
   function renderPrompt() {
-    const p = state.prompts[state.idx];
-    if (!p) return renderCorpusExhausted();
-    // Session boundary — but only once per boundary, or "Record N more" would bounce straight
-    // back to the done screen.
-    if (state.idx > 0 && sessionPos() === 0 && state.shownDoneAt !== state.idx) return renderSessionDone();
+    const v = LTSSession.sessionView({
+      idx: state.idx, total: state.prompts.length,
+      size: SESSION_SIZE, shownDoneAt: state.shownDoneAt,
+    });
+    if (v.screen === "done") return renderSessionDone(v);
     showStudio(true);
+    const p = state.prompts[state.idx];
     $("prompt-tongan").textContent = p.tongan;
     $("prompt-english").textContent = p.english;
     // Progress is against the SESSION, not the corpus: "Phrase 1 of 1700" reads as endless work.
-    const left = Math.round(((sessionLen() - sessionPos()) * 7) / 60);
-    $("prompt-progress").textContent =
-      `Phrase ${sessionPos() + 1} of ${sessionLen()}` + (left >= 1 ? ` · about ${left} min left` : " · nearly done");
+    $("prompt-progress").textContent = v.label;
     resetRecording();
+    setControlsBusy(false);
   }
 
-  function renderSessionDone() {
+  function renderSessionDone(v) {
     state.shownDoneAt = state.idx;
+    // A terminal screen is reachable holding a recorded-but-unsubmitted take (record, then Skip).
+    // Without this reset the blob stays live and Submit stays enabled, filing that audio under the
+    // NEXT prompt — mismatched audio and transcript landing in the corpus.
+    resetRecording();
     showStudio(false);
+    setControlsBusy(false);
     const mins = state.sessionSeconds / 60;
     const amount = mins >= 1 ? `${mins.toFixed(1)} minutes` : `${Math.round(state.sessionSeconds)} seconds`;
-    $("session-done-sub").textContent =
-      `You've contributed ${amount} of Tongan speech. Every clip is reviewed before it joins the open dataset.`;
-    const more = state.prompts.length - state.idx;
-    $("btn-continue").hidden = more <= 0;
-    $("btn-continue").textContent = `Record ${Math.min(SESSION_SIZE, more)} more`;
-    setStatus("");
-  }
-
-  function renderCorpusExhausted() {
-    showStudio(false);
-    $("session-done-sub").textContent =
-      "That's every phrase we have — mālō ʻaupito. Check back as more are added.";
-    $("btn-continue").hidden = true;
+    const thanks = state.sessionSeconds > 0
+      ? `You've contributed ${amount} of Tongan speech. Every clip is reviewed before it joins the open dataset.`
+      : "Every clip is reviewed before it joins the open dataset.";
+    $("session-done-sub").textContent = v.isFinal
+      ? `${thanks} That's every phrase we have for now — check back as more are added.`
+      : thanks;
+    $("btn-continue").hidden = v.continueCount <= 0;
+    $("btn-continue").textContent = `Record ${v.continueCount} more`;
     setStatus("");
   }
 
@@ -256,6 +266,10 @@
   $("btn-record").addEventListener("click", () => (state.recording ? stopRecording() : startRecording()));
 
   // ── Submit ──────────────────────────────────────────────────────────────────
+  // Any interaction — including selecting "Prefer not to say" — makes the panel authoritative.
+  for (const id of ["d-island", "d-age", "d-gender"]) {
+    $(id).addEventListener("change", () => { state.demographicsTouched = true; });
+  }
   function currentDemographics() {
     return {
       island: $("d-island").value || null,
@@ -270,7 +284,10 @@
       transcript: p.tongan,      // what they were asked to say; a reviewer can correct it
       english: p.english,
       speakerId: state.speakerId,
-      demographics: currentDemographics(),
+      // Sent only once the contributor has actually touched the panel. Omitting it leaves their
+      // stored answers alone; sending it is authoritative, so switching a field back to "Prefer
+      // not to say" clears it server-side rather than being silently ignored.
+      ...(state.demographicsTouched ? { demographics: currentDemographics() } : {}),
       consent: {
         version: cfg.consentVersion,
         confirmedAge: $("c-age").checked,
@@ -281,6 +298,9 @@
     };
   }
   async function submit() {
+    // No prompt at the cursor means we are on a terminal screen; buildMeta() would throw on
+    // undefined and, because submit() is async, reject silently with no feedback to the user.
+    if (state.busy || !state.prompts[state.idx]) return;
     if (!state.blob) { setStatus("Record the phrase first.", true); return; }
     if (!consentGranted()) { setStatus("Please confirm all three consent boxes.", true); return; }
     const meta = buildMeta();
@@ -307,15 +327,28 @@
       setStatus("Upload failed: " + (err && err.message || "unknown") + ". Try again.", true);
     }
   }
+  /** Lock the controls while the prompt is swapping. `state.idx` moves immediately but the visible
+   *  prompt only changes 700 ms later, so anything recorded in that gap would be read against the
+   *  OLD text and filed against the NEW one — mismatched audio and transcript. Also stops a second
+   *  Skip click from double-advancing and skipping past a session boundary entirely. */
+  function setControlsBusy(busy) {
+    state.busy = busy;
+    $("btn-record").disabled = busy || !consentGranted();
+    $("btn-skip").disabled = busy;
+    if (busy) $("btn-submit").disabled = true;
+  }
+
   function advance() {
+    if (state.busy) return;
+    setControlsBusy(true);
     state.idx += 1;
     // Demographics describe the SPEAKER, not the clip, and the same person records the whole
     // session — so they are deliberately NOT cleared here. Clearing them made every submission
     // after the first send nulls, which the server then merged over the speaker's real answers.
-    setTimeout(() => { renderPrompt(); }, 700);
+    setTimeout(() => { renderPrompt(); }, 700);   // renderPrompt / renderSessionDone clear `busy`
   }
   $("btn-submit").addEventListener("click", submit);
-  $("btn-skip").addEventListener("click", () => { setStatus(""); advance(); });
+  $("btn-skip").addEventListener("click", () => { if (!state.busy) { setStatus(""); advance(); } });
   $("btn-continue").addEventListener("click", () => { setStatus(""); renderPrompt(); });
 
   function setStatus(msg, isError) {
