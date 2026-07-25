@@ -56,14 +56,22 @@
 
     <!-- Recording studio (disabled until consent) -->
     <section class="card studio" id="studio" aria-disabled="true">
-      <div class="prompt">
+      <div class="prompt" id="prompt-block">
         <div class="prompt-label">Read this aloud</div>
         <div class="prompt-tongan" id="prompt-tongan">…</div>
         <div class="prompt-english" id="prompt-english">…</div>
         <div class="prompt-progress" id="prompt-progress"></div>
       </div>
 
-      <div class="recorder">
+      <!-- Shown at each session boundary (config.js → sessionSize). Progress is deliberately
+           framed as a short, finishable session rather than the whole corpus. -->
+      <div class="session-done" id="session-done" hidden>
+        <div class="session-done-title">Mālō ʻaupito!</div>
+        <p class="session-done-sub" id="session-done-sub"></p>
+        <button id="btn-continue" class="btn btn-primary">Record more</button>
+      </div>
+
+      <div class="recorder" id="recorder-block">
         <button id="btn-record" class="btn btn-record" disabled>● Record</button>
         <span id="rec-timer" class="timer">0.0s</span>
         <audio id="playback" controls hidden></audio>
@@ -104,7 +112,7 @@
         </div>
       </details>
 
-      <div class="actions">
+      <div class="actions" id="actions-block">
         <button id="btn-skip" class="btn btn-ghost">Skip this phrase</button>
         <button id="btn-submit" class="btn btn-primary" disabled>Submit &amp; next</button>
       </div>

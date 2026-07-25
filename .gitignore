@@ -64,6 +64,7 @@ venv/
 /eval/runs/
 .firebase/
 firebase-debug.log
+*-debug.log
 
 # =============================================================================
 #  OS / editor

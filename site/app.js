@@ -82,9 +82,17 @@
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 
   // ── State ─────────────────────────────────────────────────────────────────
+  const SESSION_SIZE = Math.max(1, cfg.sessionSize || 25);
   const state = {
     prompts: [],
     idx: 0,
+    // Seconds of audio recorded in this session — drives the "minutes contributed" readout.
+    // The authoritative duration is measured server-side by ffprobe at accept time.
+    sessionSeconds: 0,
+    // idx at which the session-complete screen was last shown (see renderPrompt)
+    shownDoneAt: -1,
+    // client-measured length of the take currently held in state.blob
+    lastDurationSec: 0,
     stream: null,
     recorder: null,
     chunks: [],
@@ -118,22 +126,72 @@
   consentBoxes.forEach((b) => b.addEventListener("change", refreshConsent));
 
   // ── Prompts ───────────────────────────────────────────────────────────────
+  /** Fisher–Yates. Contributors are served a shuffled corpus so they don't all record the same
+   *  opening prompts — with one shared ordering, prompt #1 gets every contributor and prompt #900
+   *  gets none. */
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
   async function loadPrompts() {
     try {
       const res = await fetch(cfg.promptsUrl || "prompts.sample.json");
-      state.prompts = await res.json();
+      state.prompts = shuffle(await res.json());
     } catch {
       state.prompts = [{ promptId: "fallback-001", tongan: "Mālō e lelei", english: "Hello", tags: [] }];
     }
     renderPrompt();
   }
+
+  /** Position within the current session (0-based), and how long a session actually is — the
+   *  final session is short if the corpus runs out. */
+  const sessionPos = () => state.idx % SESSION_SIZE;
+  const sessionStart = () => state.idx - sessionPos();
+  const sessionLen = () => Math.min(SESSION_SIZE, state.prompts.length - sessionStart());
+
+  function showStudio(show) {
+    $("session-done").hidden = show;
+    for (const id of ["prompt-block", "recorder-block", "actions-block"]) $(id).hidden = !show;
+  }
+
   function renderPrompt() {
     const p = state.prompts[state.idx];
-    if (!p) { $("prompt-tongan").textContent = "🎉 That's every phrase — mālō!"; $("prompt-english").textContent = ""; $("btn-record").disabled = true; $("btn-skip").disabled = true; return; }
+    if (!p) return renderCorpusExhausted();
+    // Session boundary — but only once per boundary, or "Record N more" would bounce straight
+    // back to the done screen.
+    if (state.idx > 0 && sessionPos() === 0 && state.shownDoneAt !== state.idx) return renderSessionDone();
+    showStudio(true);
     $("prompt-tongan").textContent = p.tongan;
     $("prompt-english").textContent = p.english;
-    $("prompt-progress").textContent = `Phrase ${state.idx + 1} of ${state.prompts.length}`;
+    // Progress is against the SESSION, not the corpus: "Phrase 1 of 1700" reads as endless work.
+    const left = Math.round(((sessionLen() - sessionPos()) * 7) / 60);
+    $("prompt-progress").textContent =
+      `Phrase ${sessionPos() + 1} of ${sessionLen()}` + (left >= 1 ? ` · about ${left} min left` : " · nearly done");
     resetRecording();
+  }
+
+  function renderSessionDone() {
+    state.shownDoneAt = state.idx;
+    showStudio(false);
+    const mins = state.sessionSeconds / 60;
+    const amount = mins >= 1 ? `${mins.toFixed(1)} minutes` : `${Math.round(state.sessionSeconds)} seconds`;
+    $("session-done-sub").textContent =
+      `You've contributed ${amount} of Tongan speech. Every clip is reviewed before it joins the open dataset.`;
+    const more = state.prompts.length - state.idx;
+    $("btn-continue").hidden = more <= 0;
+    $("btn-continue").textContent = `Record ${Math.min(SESSION_SIZE, more)} more`;
+    setStatus("");
+  }
+
+  function renderCorpusExhausted() {
+    showStudio(false);
+    $("session-done-sub").textContent =
+      "That's every phrase we have — mālō ʻaupito. Check back as more are added.";
+    $("btn-continue").hidden = true;
+    setStatus("");
   }
 
   // ── Recording (MediaRecorder) ───────────────────────────────────────────────
@@ -173,6 +231,7 @@
     $("btn-record").classList.remove("is-recording");
   }
   function onRecordingStop() {
+    state.lastDurationSec = (performance.now() - state.startedAt) / 1000;
     state.blob = new Blob(state.chunks, { type: state.recorder.mimeType || "audio/webm" });
     const url = URL.createObjectURL(state.blob);
     const pb = $("playback");
@@ -189,7 +248,7 @@
     }, 100);
   }
   function resetRecording() {
-    state.blob = null; state.chunks = [];
+    state.blob = null; state.chunks = []; state.lastDurationSec = 0;
     $("rec-timer").textContent = "0.0s";
     const pb = $("playback"); pb.hidden = true; pb.removeAttribute("src");
     $("btn-submit").disabled = true;
@@ -231,6 +290,7 @@
       // STUB mode — no backend yet. Prove the payload is well-formed.
       console.log("[STUB submit] meta:", meta, "audio bytes:", state.blob.size);
       setStatus("✓ (stub) Contribution assembled — no backend configured yet. Advancing…");
+      state.sessionSeconds += state.lastDurationSec;
       return advance();
     }
     try {
@@ -240,6 +300,7 @@
       const res = await fetch(cfg.submitEndpoint, { method: "POST", body: fd });
       if (!res.ok) throw new Error("HTTP " + res.status);
       setStatus("✓ Mālō! Your recording was submitted for review. Advancing…");
+      state.sessionSeconds += state.lastDurationSec;
       advance();
     } catch (err) {
       $("btn-submit").disabled = false;
@@ -248,11 +309,14 @@
   }
   function advance() {
     state.idx += 1;
-    $("d-island").value = ""; $("d-age").value = ""; $("d-gender").value = "";
+    // Demographics describe the SPEAKER, not the clip, and the same person records the whole
+    // session — so they are deliberately NOT cleared here. Clearing them made every submission
+    // after the first send nulls, which the server then merged over the speaker's real answers.
     setTimeout(() => { renderPrompt(); }, 700);
   }
   $("btn-submit").addEventListener("click", submit);
   $("btn-skip").addEventListener("click", () => { setStatus(""); advance(); });
+  $("btn-continue").addEventListener("click", () => { setStatus(""); renderPrompt(); });
 
   function setStatus(msg, isError) {
     const el = $("status");

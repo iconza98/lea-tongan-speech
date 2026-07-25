@@ -1,9 +1,12 @@
 /**
  * Accept/transcode + moderation pipeline for the open Tongan speech corpus.
  *
- * ⚠️ UNTESTED SKELETON — written before the Firebase project exists. It compiles-shaped and follows
- *    the app's proven accept pattern, but has not been deployed or run. Stand up the project, set the
- *    bucket, `npm --prefix functions run typecheck`, then emulate before trusting it.
+ * PARTLY VERIFIED — `submitContribution` and the transcode/probe stage have been exercised against
+ *    the emulator suite (see functions/README.md). `acceptClip`/`rejectClip` have NOT: they sit
+ *    behind `assertReviewer`, which needs a real ID token. Nothing here is deployed yet.
+ *
+ *    Note `npm run typecheck` passing proves very little in this file — `admin.firestore.FieldValue`
+ *    typechecked fine while being `undefined` at runtime (see the FieldValue import below).
  *
  * Flow (data/schema.md + docs/adr/0001, 0002):
  *   site  ──POST multipart──▶  submitContribution  ──▶  submissions/{clipId}/source.<ext>
@@ -16,6 +19,11 @@ import { setGlobalOptions } from "firebase-functions/v2";
 import { onRequest, onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
+// FieldValue comes from the modular entry point, NOT `admin.firestore.FieldValue`. Under
+// `esModuleInterop`, `import * as admin` compiles to a namespace COPY (`__importStar`), and the
+// statics hanging off `admin.firestore` don't survive it — `admin.firestore()` still works, but
+// `admin.firestore.FieldValue` is undefined at runtime and every write throws.
+import { FieldValue } from "firebase-admin/firestore";
 import { randomUUID } from "crypto";
 import { tmpdir } from "os";
 import { join } from "path";
@@ -64,7 +72,7 @@ export const submitContribution = onRequest(
       const sourcePath = `submissions/${clipId}/source.${ext}`;
       await bucket.file(sourcePath).save(audio, { contentType: mime, resumable: false });
 
-      const now = admin.firestore.FieldValue.serverTimestamp();
+      const now = FieldValue.serverTimestamp();
       await db.collection("clips").doc(clipId).set({
         clipId,
         promptId: meta.promptId,
@@ -78,16 +86,32 @@ export const submitContribution = onRequest(
         createdAt: now,
         updatedAt: now,
       });
-      await db.collection("speakers").doc(meta.speakerId).set(
-        {
-          speakerId: meta.speakerId,
-          demographics: meta.demographics,
-          consentVersion: meta.consent.version,
-          clipCount: admin.firestore.FieldValue.increment(1),
-          updatedAt: now,
-        },
-        { merge: true }
-      );
+      // Only write demographics the contributor actually answered. Every submission carries the
+      // full {island, ageBand, gender} shape with nulls for "prefer not to say", and a merge writes
+      // those nulls over whatever the speaker already told us — so a 25-clip session used to end
+      // with the demographics blanked by clip 2. Absent > null here.
+      const demographics: Record<string, string> = {};
+      for (const [k, v] of Object.entries(meta.demographics)) {
+        if (v !== null && v !== undefined) demographics[k] = v;
+      }
+
+      const speakerRef = db.collection("speakers").doc(meta.speakerId);
+      await db.runTransaction(async (tx) => {
+        const snap = await tx.get(speakerRef);
+        tx.set(
+          speakerRef,
+          {
+            speakerId: meta.speakerId,
+            ...(Object.keys(demographics).length ? { demographics } : {}),
+            consentVersion: meta.consent.version,
+            clipCount: FieldValue.increment(1),
+            // Set once, on the speaker's first contribution (data/schema.md requires it).
+            ...(snap.exists ? {} : { createdAt: now }),
+            updatedAt: now,
+          },
+          { merge: true }
+        );
+      });
 
       res.status(200).json({ clipId });
     } catch (err) {
@@ -137,8 +161,8 @@ export const acceptClip = onCall(
         "audio.codec": "flac",
         "audio.bytes": bytes,
         "review.reviewerId": request.auth?.token?.email ?? null,
-        "review.reviewedAt": admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        "review.reviewedAt": FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
       return { ok: true, clipId, durationMs };
     } finally {
@@ -157,9 +181,9 @@ export const rejectClip = onCall(
     await db.collection("clips").doc(clipId).update({
       status: "rejected",
       "review.reviewerId": request.auth?.token?.email ?? null,
-      "review.reviewedAt": admin.firestore.FieldValue.serverTimestamp(),
+      "review.reviewedAt": FieldValue.serverTimestamp(),
       "review.notes": request.data?.notes ?? null,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
     return { ok: true, clipId };
   }
